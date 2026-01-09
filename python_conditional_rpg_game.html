@@ -1,0 +1,3441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>🎮 조건문 RPG v4.0 [사운드 시스템 추가]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            height: 100vh;
+            color: #fff;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        #gameContainer {
+            width: 100%;
+            max-width: 1500px;
+            height: 95vh;
+            max-height: 900px;
+            background: #0f1419;
+            border: 4px solid #4a5568;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        #leftPanel {
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 400px;
+            background: #1a202c;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            flex-shrink: 0;
+            border-radius: 6px;
+        }
+
+        #gameLog {
+            flex-grow: 1;
+            background: #1a202c;
+            border: 2px solid #4a5568;
+            border-radius: 6px;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #68d391;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 2px 4px;
+            border-left: 3px solid #4a5568;
+            padding-left: 8px;
+        }
+
+        .log-success {
+            border-left-color: #48bb78;
+            color: #68d391;
+        }
+
+        .log-error {
+            border-left-color: #ef4444;
+            color: #fc8181;
+        }
+
+        .log-info {
+            border-left-color: #4299e1;
+            color: #90cdf4;
+        }
+
+        .log-system {
+            border-left-color: #fbbf24;
+            color: #fcd34d;
+        }
+
+        #gameInfo {
+            width: 45%;
+            padding: 8px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 100%;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 0;
+        }
+
+        .stat-box {
+            background: rgba(74, 85, 104, 0.3);
+            padding: 6px 5px;
+            border-radius: 6px;
+            border: 2px solid #4a5568;
+            text-align: center;
+            position: relative;
+            min-height: 62px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #a0aec0;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .hp-bar, .exp-bar {
+            height: 8px;
+            background: #2d3748;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+
+        .exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4299e1 0%, #3182ce 100%);
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(66, 153, 225, 0.5);
+        }
+
+        #messageBox {
+            background: rgba(26, 32, 44, 0.95);
+            border: 3px solid #4a5568;
+            border-radius: 8px;
+            padding: 10px;
+            height: 130px;
+            position: relative;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .message-text {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .code-example {
+            background: #1a202c;
+            border: 2px solid #4a5568;
+            border-radius: 4px;
+            padding: 6px;
+            margin: 4px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #68d391;
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+
+        .keyword {
+            color: #fc8181;
+            font-weight: bold;
+        }
+
+        .condition {
+            color: #fbbf24;
+        }
+
+        .string {
+            color: #63b3ed;
+        }
+
+        #choiceContainer {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-auto-rows: minmax(42px, auto);
+            gap: 8px;
+            padding: 0;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #5a67d8 0%, #4c51bf 100%);
+            border: 3px solid #6b7fd8;
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            min-height: 42px;
+            display: flex !important;
+            align-items: center;
+            word-break: keep-all;
+            line-height: 1.3;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+            border-color: #818cf8;
+            background: linear-gradient(135deg, #6b7fd8 0%, #5a67d8 100%);
+        }
+
+        .choice-btn:active {
+            transform: translateY(0);
+        }
+
+        .choice-btn.correct {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border-color: #38a169;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .choice-btn.wrong {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            border-color: #e53e3e;
+            animation: shake 0.5s ease;
+        }
+
+        .choice-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .choice-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .subjective-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 18px;
+            padding: 20px 0 0 0;
+            flex-grow: 1;
+            height: 100%;
+        }
+
+        .subjective-input {
+            padding: 18px 28px;
+            font-size: 16px;
+            width: 80%;
+            max-width: 450px;
+            border: 3px solid #6b7fd8;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #fff;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.1);
+        }
+
+        .subjective-input::placeholder {
+            color: #a0aec0;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        .subjective-input:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.25), 0 6px 20px rgba(0, 0, 0, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .subjective-submit {
+            background: linear-gradient(135deg, #5a67d8 0%, #4c51bf 100%);
+            border: 3px solid #6b7fd8;
+            border-radius: 12px;
+            padding: 15px 55px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.5px;
+        }
+
+        .subjective-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(90, 103, 216, 0.6);
+            background: linear-gradient(135deg, #6b7fd8 0%, #5a67d8 100%);
+            border-color: #818cf8;
+        }
+
+        .subjective-submit:active {
+            transform: translateY(0);
+        }
+        }
+
+        .potion-container {
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        #buyPotionBtn {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            border: 2px solid #c05621;
+            border-radius: 6px;
+            padding: 8px 14px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            width: 100%;
+        }
+
+        #buyPotionBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(237, 137, 54, 0.4);
+        }
+
+        #buyPotionBtn:active {
+            transform: translateY(0);
+        }
+
+        .weapon-shop-container {
+            padding: 8px;
+            background: rgba(26, 32, 44, 0.6);
+            border-radius: 6px;
+            border: 2px solid #4a5568;
+            flex-shrink: 0;
+        }
+
+        .weapon-shop-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .weapon-shop-current {
+            font-size: 11px;
+            color: #a0aec0;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        #weaponShop {
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        #tutorialOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .tutorial-content {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            border: 4px solid #4a5568;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+            animation: slideDown 0.5s ease;
+        }
+
+        .tutorial-title {
+            font-size: 34px;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .tutorial-text {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+            border: 3px solid #dd6b20;
+            border-radius: 8px;
+            padding: 12px 30px;
+            color: #fff;
+            font-size: 19px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(246, 173, 85, 0.5);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: particleFloat 2s ease-out forwards;
+        }
+
+        @keyframes particleFloat {
+            to {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        .level-up-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            animation: levelUpAnim 2s ease-out forwards;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @keyframes levelUpAnim {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1) translateY(-50px);
+            }
+        }
+
+        .achievement-popup {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid #5a67d8;
+            border-radius: 8px;
+            padding: 15px 20px;
+            animation: slideInRight 0.5s ease;
+            z-index: 998;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .progress-indicator {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 10px;
+            color: #a0aec0;
+        }
+
+        .stage-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4a5568;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+
+        .stage-indicator.completed {
+            background: #48bb78;
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+
+        .stage-indicator.current {
+            background: #fbbf24;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .emoji {
+            display: inline-block;
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
+
+        #nextBtn {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border: 2px solid #2f855a;
+            border-radius: 6px;
+            padding: 8px 20px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        #nextBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+        }
+
+        #nextBtn.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 튜토리얼 오버레이 -->
+        <div id="tutorialOverlay">
+            <div class="tutorial-content">
+                <div class="tutorial-title">🎮 조건문 마스터 RPG</div>
+                <div class="tutorial-text">
+                    <p><strong>🏰 게임 목표</strong></p>
+                    <p>파이썬 조건문(if, elif, else)을 학습하며<br>모험가 길드의 시험을 통과하세요!</p>
+                    <br>
+                    <p><strong>⚔️ 게임 방식</strong></p>
+                    <p>• 각 상황에 맞는 조건문을 선택하세요<br>
+                    • 올바른 선택을 하면 경험치와 보상을 획득합니다<br>
+                    • 레벨을 올려 강력한 모험가가 되세요!</p>
+                    <br>
+                    <p><strong>📚 학습 내용</strong></p>
+                    <p>if, elif, else, 비교 연산자, 논리 연산자</p>
+                </div>
+                <button class="start-btn" id="startGameBtn">🚀 모험 시작하기</button>
+            </div>
+        </div>
+
+        <!-- 게임 캔버스 -->
+        <div id="leftPanel">
+            <canvas id="gameCanvas" width="1400" height="400"></canvas>
+            
+            <!-- 게임 로그 -->
+            <div id="gameLog">
+                <div class="log-entry log-system">🎮 게임 시스템 로그</div>
+            </div>
+        </div>
+
+        <!-- 게임 정보 -->
+        <div id="gameInfo">
+            <!-- 스탯 -->
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-label">❤️ HP</div>
+                    <div class="stat-value" id="hpValue">100/100</div>
+                    <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width: 100%"></div></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">⭐ Level</div>
+                    <div class="stat-value" id="levelValue">1</div>
+                    <div class="exp-bar"><div class="exp-fill" id="expFill" style="width: 0%"></div></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">💰 Gold</div>
+                    <div class="stat-value" id="goldValue">0</div>
+                </div>
+            </div>
+
+            <!-- 포션 구매 버튼 -->
+            <div class="potion-container">
+                <button id="buyPotionBtn" onclick="buyPotion()">
+                    🧪 포션 구매 (250G / +20HP)
+                </button>
+            </div>
+
+            <!-- 무기 구매 -->
+            <div class="weapon-shop-container">
+                <div class="weapon-shop-title">
+                    ⚔️ 무기 상점
+                </div>
+                <div class="weapon-shop-current">
+                    현재: <span id="currentWeapon" style="color: #68d391;">맨주먹</span>
+                </div>
+                <div id="weaponShop">
+                    <!-- 무기 목록이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </div>
+
+            <!-- 메시지 박스 -->
+            <div id="messageBox">
+                <div class="message-text" id="messageText"></div>
+            </div>
+
+            <!-- 선택지 -->
+            <div id="choiceContainer"></div>
+
+            <!-- 다음 버튼 -->
+            <button id="nextBtn" class="hidden" onclick="nextStage()">다음 단계로 →</button>
+
+            <!-- 진행도 표시 -->
+            <div class="progress-indicator" id="progressIndicator"></div>
+            
+            <!-- 음소거 버튼 -->
+            <button id="muteBtn" onclick="toggleMute()" style="position: absolute; top: 10px; right: 10px; padding: 8px 12px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; cursor: pointer; font-size: 18px; z-index: 1000;">🔊</button>
+        </div>
+    </div>
+
+    <script>
+        // 게임 상태
+        const gameState = {
+            hp: 100,
+            maxHp: 100,
+            level: 1,
+            exp: 0,
+            maxExp: 100,
+            gold: 0,
+            currentStage: 0,
+            score: 0,
+            correctAnswers: 0,
+            usedStages: [], // 이미 풀었던 문제 추적
+            weapon: 0 // 0: 무기 없음, 1~5: 무기 레벨
+        };
+
+        // 무기 정보
+        const weapons = [
+            { name: "맨주먹", cost: 0, effect: 0 },
+            { name: "평범한 영웅의 검", cost: 500, effect: 1 },
+            { name: "비범한 천사의 검", cost: 1000, effect: 2 },
+            { name: "사악한 큐피트의 케이크검", cost: 1500, effect: 3 },
+            { name: "귀찮은 드래곤의 검", cost: 2000, effect: 4 },
+            { name: "무명 기사의 에고 소드", cost: 2500, effect: 5 }
+        ];
+
+        // 애니메이션 프레임 ID (GIF 애니메이션 지원)
+        let animationFrameId = null;
+
+        // 캔버스 설정
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 게임 스테이지 (조건문 학습 단계)
+        const stages = [
+            {
+                title: "🎯 Stage 1: 기본 if문",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">👋</span> <strong>모험가 길드에 오신 것을 환영합니다!</strong><br><br>
+                첫 번째 시험입니다. 파이썬의 가장 기본적인 조건문 <span class="keyword">if</span>를 배워봅시다!<br><br>
+                <div class="code-example"><span class="keyword">if</span> <span class="condition">조건</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;코드 실행</div>
+                <br><strong>문제:</strong> 플레이어의 체력이 30입니다. 다음 중 올바른 코드는?`,
+                question: "hp = 30일 때, '위험!'을 출력하려면?",
+                choices: [
+                    { text: "if hp < 50:\n    print('위험!')", correct: true, explanation: "✅ 정답! hp(30)는 50보다 작으므로 조건이 참입니다!" },
+                    { text: "if hp > 50:\n    print('위험!')", correct: false, explanation: "❌ hp(30)는 50보다 크지 않습니다." },
+                    { text: "if hp == 50:\n    print('위험!')", correct: false, explanation: "❌ hp(30)는 50과 같지 않습니다." },
+                    { text: "if hp = 50:\n    print('위험!')", correct: false, explanation: "❌ 비교는 ==를 사용해야 합니다. =는 대입 연산자입니다." },
+                    { text: "if hp <= 30:\n    print('위험!')", correct: false, explanation: "❌ 30 <= 30은 참이지만, 문제는 50보다 작은 경우를 묻고 있습니다." },
+                    { text: "if hp != 50:\n    print('위험!')", correct: false, explanation: "❌ hp가 50이 아닌 것은 맞지만, '50보다 작다'는 더 정확한 조건입니다." }
+                ],
+                reward: { exp: 30, gold: 50 }
+            },
+            {
+                title: "🔀 Stage 2: if-else문",
+                scene: "shop",
+                character: "merchant",
+                type: "input",
+                message: `<span class="emoji">🏪</span> <strong>상점에 도착했습니다!</strong><br><br>
+                이제 <span class="keyword">if-else</span>문을 배워봅시다. "만약 ~이면 / 아니면"을 표현합니다.<br><br>
+                <div class="code-example"><span class="keyword">if</span> <span class="condition">조건</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;조건이 참일 때<br><span class="keyword">else</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;조건이 거짓일 때</div>
+                <br><strong>문제:</strong> 골드가 500이고 아이템 가격이 300입니다. 다음 빈칸에 들어갈 비교 연산자를 입력하세요!<br><br>
+                <div class="code-example">gold = 500<br>price = 300<br>if gold <span style="color: #ef4444;">___</span> price:<br>&nbsp;&nbsp;&nbsp;&nbsp;print('구매 완료!')</div>`,
+                question: "빈칸에 들어갈 비교 연산자는?",
+                answer: ">=",
+                acceptableAnswers: [">=", ">= ", " >=", " >= "],
+                explanation: "✅ 정답! >= 연산자는 '크거나 같다'를 의미합니다. gold(500)가 price(300)보다 크거나 같으므로 구매 가능합니다!",
+                wrongExplanation: "❌ 틀렸습니다. gold가 price보다 크거나 같아야 구매가 가능합니다. >= 연산자를 사용해야 합니다.",
+                reward: { exp: 40, gold: 80 }
+            },
+            {
+                title: "🎯 Stage 3: if-elif-else문",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🏆</span> <strong>등급 시험입니다!</strong><br><br>
+                여러 조건을 확인할 때는 <span class="keyword">elif</span>를 사용합니다!<br><br>
+                <div class="code-example"><span class="keyword">if</span> <span class="condition">조건1</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;코드1<br><span class="keyword">elif</span> <span class="condition">조건2</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;코드2<br><span class="keyword">else</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;코드3</div>
+                <br><strong>문제:</strong> 점수가 850일 때 등급을 판정하세요! (S: 900+, A: 700+, B: 500+, C: 그 외)`,
+                question: "score = 850일 때 등급은?",
+                choices: [
+                    { text: "if score >= 900:\n    등급 = 'S'\nelif score >= 700:\n    등급 = 'A'", correct: true, explanation: "✅ 정답! 850은 700 이상이므로 A등급입니다!" },
+                    { text: "if score >= 900:\n    등급 = 'S'\nelse:\n    등급 = 'A'", correct: false, explanation: "❌ elif 없이는 세밀한 등급 구분이 불가능합니다." },
+                    { text: "if score >= 700:\n    등급 = 'A'\nelif score >= 900:\n    등급 = 'S'", correct: false, explanation: "❌ 순서가 중요합니다! 첫 조건이 참이면 elif는 확인하지 않습니다." },
+                    { text: "if score == 900:\n    등급 = 'S'\nelif score == 700:\n    등급 = 'A'", correct: false, explanation: "❌ ==는 정확히 같을 때만 참입니다. >=를 사용해야 합니다." },
+                    { text: "if score > 900:\n    등급 = 'S'\nelif score > 700:\n    등급 = 'A'", correct: false, explanation: "❌ > 대신 >=를 써야 합니다. 900점과 700점도 각각 S, A등급이어야 합니다." },
+                    { text: "if score >= 900:\n    등급 = 'S'\nelif score >= 700:\n    등급 = 'B'", correct: false, explanation: "❌ 850점은 700 이상이지만, A등급이 아닌 B등급으로 잘못 판정됩니다." }
+                ],
+                reward: { exp: 50, gold: 120 }
+            },
+            {
+                title: "⚔️ Stage 4: 비교 연산자",
+                scene: "battle",
+                character: "enemy",
+                message: `<span class="emoji">🗡️</span> <strong>전투 시작!</strong><br><br>
+                비교 연산자를 마스터하세요!<br>
+                <span class="condition">></span> (크다), <span class="condition"><</span> (작다), <span class="condition">>=</span> (이상), <span class="condition"><=</span> (이하), <span class="condition">==</span> (같다), <span class="condition">!=</span> (다르다)<br><br>
+                <div class="code-example">enemy_hp = 0<br><span class="keyword">if</span> <span class="condition">enemy_hp <= 0</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;print('적 처치!')</div>
+                <br><strong>문제:</strong> 적의 체력이 0이 되었을 때 '승리!'를 출력하려면?`,
+                question: "enemy_hp = 0일 때",
+                choices: [
+                    { text: "if enemy_hp <= 0:\n    print('승리!')", correct: true, explanation: "✅ 완벽합니다! 0 이하를 정확히 체크했습니다!" },
+                    { text: "if enemy_hp < 0:\n    print('승리!')", correct: false, explanation: "❌ 0일 때도 승리인데, <는 0을 포함하지 않습니다." },
+                    { text: "if enemy_hp = 0:\n    print('승리!')", correct: false, explanation: "❌ =는 대입 연산자입니다. ==를 사용하세요!" },
+                    { text: "if enemy_hp != 100:\n    print('승리!')", correct: false, explanation: "❌ !=는 '같지 않다'입니다. 체력이 1이어도 조건이 참이 됩니다." },
+                    { text: "if enemy_hp == 0:\n    print('승리!')", correct: false, explanation: "⚠️ 정확히 0일 때만 참입니다. 하지만 음수 체력도 고려하면 <=가 더 안전합니다." },
+                    { text: "if enemy_hp > 0:\n    print('승리!')", correct: false, explanation: "❌ 적의 체력이 0보다 클 때 승리하는 것은 말이 안 됩니다." }
+                ],
+                reward: { exp: 60, gold: 150 }
+            },
+            {
+                title: "🎲 Stage 5: 논리 연산자 and",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">🚪</span> <strong>던전 입구입니다!</strong><br><br>
+                여러 조건을 동시에 만족해야 할 때는 <span class="keyword">and</span>를 사용합니다!<br><br>
+                <div class="code-example"><span class="keyword">if</span> <span class="condition">조건1 and 조건2</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;# 둘 다 참일 때만 실행</div>
+                <br><strong>문제:</strong> 레벨 15, 골드 1000일 때 무기(레벨 10+, 골드 800 필요)를 살 수 있나요?`,
+                question: "level = 15, gold = 1000",
+                choices: [
+                    { text: "if level >= 10 and gold >= 800:\n    print('구매 가능!')", correct: true, explanation: "✅ 정답! 15 >= 10 그리고 1000 >= 800, 둘 다 참입니다!" },
+                    { text: "if level >= 10 or gold >= 800:\n    print('구매 가능!')", correct: false, explanation: "❌ or는 하나만 참이어도 됩니다. 둘 다 만족해야 하므로 and를 써야 합니다." },
+                    { text: "if level >= 10:\n    if gold >= 800:\n        print('구매 가능!')", correct: false, explanation: "⚠️ 동작은 하지만 and를 쓰면 더 간단합니다!" },
+                    { text: "if level >= 10 and >= 800:\n    print('구매 가능!')", correct: false, explanation: "❌ 각 조건은 완전한 식이어야 합니다. gold >= 800으로 써야 합니다." },
+                    { text: "if level > 10 and gold > 800:\n    print('구매 가능!')", correct: false, explanation: "❌ 레벨 10, 골드 800 정확히일 때도 구매 가능해야 하므로 >=를 써야 합니다." },
+                    { text: "if level >= 10 && gold >= 800:\n    print('구매 가능!')", correct: false, explanation: "❌ &&는 다른 언어의 문법입니다. 파이썬은 and를 사용합니다." }
+                ],
+                reward: { exp: 70, gold: 200 }
+            },
+            {
+                title: "🎯 Stage 6: 논리 연산자 or",
+                scene: "vip",
+                character: "guard",
+                message: `<span class="emoji">👑</span> <strong>VIP 라운지입니다!</strong><br><br>
+                조건 중 하나만 만족하면 될 때는 <span class="keyword">or</span>를 사용합니다!<br><br>
+                <div class="code-example"><span class="keyword">if</span> <span class="condition">조건1 or 조건2</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;# 하나라도 참이면 실행</div>
+                <br><strong>문제:</strong> VIP이거나 레벨 20 이상이면 입장 가능합니다. 레벨 5인 VIP는?`,
+                question: "vip = True, level = 5",
+                choices: [
+                    { text: "if vip or level >= 20:\n    print('입장 가능!')", correct: true, explanation: "✅ 완벽합니다! vip가 True이므로 입장 가능합니다!" },
+                    { text: "if vip and level >= 20:\n    print('입장 가능!')", correct: false, explanation: "❌ and는 둘 다 참이어야 합니다. level이 5이므로 입장 불가가 됩니다." },
+                    { text: "if vip == True or level > 20:\n    print('입장 가능!')", correct: false, explanation: "❌ >는 20을 포함하지 않습니다. >=를 써야 합니다." },
+                    { text: "if vip:\n    print('입장 가능!')\nif level >= 20:\n    print('입장 가능!')", correct: false, explanation: "⚠️ 동작은 하지만 메시지가 두 번 나올 수 있습니다. or로 하나로 합치세요!" },
+                    { text: "if vip == True and level >= 20:\n    print('입장 가능!')", correct: false, explanation: "❌ and는 둘 다 참이어야 합니다. 문제는 하나만 만족하면 됩니다." },
+                    { text: "if vip || level >= 20:\n    print('입장 가능!')", correct: false, explanation: "❌ ||는 다른 언어의 문법입니다. 파이썬은 or을 사용합니다." }
+                ],
+                reward: { exp: 80, gold: 250 }
+            },
+            {
+                title: "🏆 Stage 7: not 연산자",
+                scene: "dungeon",
+                character: "enemy",
+                type: "input",
+                message: `<span class="emoji">🔒</span> <strong>비밀 문 앞입니다!</strong><br><br>
+                <span class="keyword">not</span> 연산자는 조건을 반대로 만듭니다!<br><br>
+                <div class="code-example"><span class="keyword">if not</span> <span class="condition">has_key</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;print('열쇠가 없습니다!')</div>
+                <br><strong>문제:</strong> 다음 빈칸에 들어갈 연산자를 입력하세요!<br><br>
+                <div class="code-example">is_locked = True<br>if <span style="color: #ef4444;">___</span> is_locked:<br>&nbsp;&nbsp;&nbsp;&nbsp;print('문이 열려있습니다!')</div>`,
+                question: "빈칸에 들어갈 연산자는?",
+                answer: "not",
+                acceptableAnswers: ["not", "not ", " not", " not "],
+                explanation: "✅ 정답! not 연산자는 True를 False로, False를 True로 바꿉니다. is_locked가 True이므로 not is_locked는 False가 됩니다.",
+                wrongExplanation: "❌ 틀렸습니다. is_locked가 True일 때 조건을 False로 만들려면 not 연산자를 사용해야 합니다.",
+                reward: { exp: 90, gold: 280 }
+            },
+            {
+                title: "🏆 Final Stage: 종합 테스트",
+                scene: "boss",
+                character: "dragon",
+                message: `<span class="emoji">🐉</span> <strong>최종 보스전!</strong><br><br>
+                지금까지 배운 모든 것을 활용하세요!<br><br>
+                <strong>상황:</strong> 플레이어(HP: 20, 레벨: 15, 포션: 있음)<br>
+                보스(HP: 100)<br><br>
+                <strong>문제:</strong> 체력이 30 미만이고 포션이 있으면 사용, 그렇지 않고 레벨이 15 이상이면 특수 공격, 아니면 일반 공격!`,
+                question: "player_hp = 20, level = 15, has_potion = True",
+                choices: [
+                    { text: "if hp < 30 and has_potion:\n    print('포션 사용!')", correct: true, explanation: "✅ 조건문 마스터! 체력이 낮고 포션이 있으므로 포션을 사용합니다!" },
+                    { text: "if hp < 30 or has_potion:\n    print('포션 사용!')", correct: false, explanation: "❌ or는 하나만 참이어도 됩니다. 체력이 충분해도 포션을 쓰게 됩니다." },
+                    { text: "if level >= 15:\n    print('특수 공격!')", correct: false, explanation: "❌ 순서가 중요합니다! 체력이 낮으면 먼저 포션을 써야 합니다." },
+                    { text: "if hp < 30:\n    print('포션 사용!')", correct: false, explanation: "❌ 포션이 있는지도 확인해야 합니다. and has_potion이 필요합니다." },
+                    { text: "if hp <= 30 and has_potion:\n    print('포션 사용!')", correct: false, explanation: "⚠️ 거의 맞지만, 30일 때는 '미만'이 아니므로 < 를 써야 합니다." },
+                    { text: "if has_potion and hp < 30:\n    print('포션 사용!')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 일반적으로 상태를 먼저 체크(hp < 30)하는 것이 더 자연스럽습니다." }
+                ],
+                reward: { exp: 100, gold: 500 }
+            },
+            // 추가 문제들
+            {
+                title: "📝 Stage 8: if문 심화 - 숫자 비교",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">📊</span> <strong>숫자 비교 마스터!</strong><br><br>
+                <div class="code-example">age = 25<br><span class="keyword">if</span> <span class="condition">age >= 18</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;print('성인')</div>
+                <br><strong>문제:</strong> 나이가 25세일 때 '성인입니다'를 출력하려면? (18세 이상)`,
+                choices: [
+                    { text: "if age >= 18:\n    print('성인입니다')", correct: true, explanation: "✅ 정답! 25는 18 이상이므로 조건이 참입니다!" },
+                    { text: "if age > 18:\n    print('성인입니다')", correct: false, explanation: "❌ 18세도 성인이므로 >= 를 사용해야 합니다." },
+                    { text: "if age == 18:\n    print('성인입니다')", correct: false, explanation: "❌ 18세만 성인이 아닙니다. >= 를 사용하세요!" },
+                    { text: "if age < 18:\n    print('성인입니다')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if age <= 18:\n    print('성인입니다')", correct: false, explanation: "❌ 18세 이상이어야 하는데 이하 조건입니다!" },
+                    { text: "if age != 18:\n    print('성인입니다')", correct: false, explanation: "❌ 18세가 아닐 때가 아니라 18세 이상일 때입니다!" }
+                ],
+                reward: { exp: 35, gold: 60 }
+            },
+            {
+                title: "🎮 Stage 9: 게임 점수 판정",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🎯</span> <strong>점수 시스템!</strong><br><br>
+                <strong>문제:</strong> 점수가 450일 때 어떤 메시지가 출력될까요?`,
+                choices: [
+                    { text: "if score >= 500:\n    print('합격!')\nelse:\n    print('불합격')", correct: true, explanation: "✅ 정답! 450 < 500이므로 '불합격'이 출력됩니다!" },
+                    { text: "if score > 500:\n    print('합격!')\nelse:\n    print('불합격')", correct: false, explanation: "❌ 500점도 합격이어야 하므로 >= 를 써야 합니다." },
+                    { text: "if score <= 500:\n    print('합격!')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if score == 500:\n    print('합격!')", correct: false, explanation: "❌ 500점 이상이 합격이어야 합니다!" },
+                    { text: "if score != 500:\n    print('합격!')", correct: false, explanation: "❌ != 는 '같지 않음'을 의미합니다. >= 를 사용해야 합니다!" },
+                    { text: "if score < 500:\n    print('합격!')\nelse:\n    print('불합격')", correct: false, explanation: "❌ 조건이 완전히 반대입니다! 500 이상일 때 합격이어야 합니다!" }
+                ],
+                reward: { exp: 40, gold: 70 }
+            },
+            {
+                title: "💰 Stage 10: 가격 비교",
+                scene: "shop",
+                character: "merchant",
+                message: `<span class="emoji">🏪</span> <strong>할인 판정!</strong><br><br>
+                <strong>문제:</strong> 가격이 5000원 이상이면 10% 할인! price = 6000일 때는?`,
+                choices: [
+                    { text: "if price >= 5000:\n    할인 = True", correct: true, explanation: "✅ 정답! 6000 >= 5000이므로 할인 적용!" },
+                    { text: "if price > 5000:\n    할인 = True", correct: false, explanation: "❌ 5000원도 할인이므로 >= 를 써야 합니다." },
+                    { text: "if price <= 5000:\n    할인 = True", correct: false, explanation: "❌ 5000원 이상일 때 할인입니다!" },
+                    { text: "if price < 5000:\n    할인 = True", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if price == 5000:\n    할인 = True", correct: false, explanation: "❌ 정확히 5000원일 때만이 아니라 5000원 이상일 때 할인입니다!" },
+                    { text: "if price != 5000:\n    할인 = True", correct: false, explanation: "❌ != 는 같지 않음을 의미합니다. 5000원 이상인지 확인해야 합니다!" }
+                ],
+                reward: { exp: 40, gold: 75 }
+            },
+            {
+                title: "🌡️ Stage 11: 온도 체크",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">🌡️</span> <strong>온도 판정!</strong><br><br>
+                <strong>문제:</strong> 온도가 30도 이상이면 '더워요', 아니면 '적당해요'. temp = 28일 때?`,
+                choices: [
+                    { text: "if temp >= 30:\n    print('더워요')\nelse:\n    print('적당해요')", correct: true, explanation: "✅ 정답! 28 < 30이므로 '적당해요'가 출력됩니다!" },
+                    { text: "if temp > 30:\n    print('더워요')\nelse:\n    print('적당해요')", correct: false, explanation: "❌ 30도도 더운 것이므로 >= 를 써야 합니다." },
+                    { text: "if temp < 30:\n    print('더워요')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if temp == 30:\n    print('더워요')", correct: false, explanation: "❌ 30도 이상이 더운 것입니다!" },
+                    { text: "if temp <= 30:\n    print('더워요')\nelse:\n    print('적당해요')", correct: false, explanation: "❌ 조건이 반대입니다! 30도 이상일 때 더워요가 출력되어야 합니다!" },
+                    { text: "if temp != 30:\n    print('적당해요')", correct: false, explanation: "❌ 30도가 아니라는 조건만으로는 판단할 수 없습니다!" }
+                ],
+                reward: { exp: 40, gold: 70 }
+            },
+            {
+                title: "⚡ Stage 12: 마나 체크",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">⚡</span> <strong>마나 부족 체크!</strong><br><br>
+                <strong>문제:</strong> 마나가 20 미만이면 '마나 부족!' 출력. mana = 15일 때?`,
+                choices: [
+                    { text: "if mana < 20:\n    print('마나 부족!')", correct: true, explanation: "✅ 정답! 15 < 20이므로 마나가 부족합니다!" },
+                    { text: "if mana <= 20:\n    print('마나 부족!')", correct: false, explanation: "❌ 20일 때는 부족하지 않습니다. < 를 써야 합니다." },
+                    { text: "if mana > 20:\n    print('마나 부족!')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if mana == 20:\n    print('마나 부족!')", correct: false, explanation: "❌ 20 미만일 때만 부족합니다!" },
+                    { text: "if mana >= 20:\n    print('마나 부족!')", correct: false, explanation: "❌ 완전히 반대입니다! 20 미만일 때 부족한 것입니다!" },
+                    { text: "if mana != 20:\n    print('마나 부족!')", correct: false, explanation: "❌ 20이 아닐 때가 아니라 20 미만일 때만 부족합니다!" }
+                ],
+                reward: { exp: 45, gold: 80 }
+            },
+            {
+                title: "🎖️ Stage 13: 등급 세분화",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🎖️</span> <strong>5단계 등급!</strong><br><br>
+                <strong>문제:</strong> SSS(950+), SS(900+), S(850+), A(800+), B(그외). score = 920일 때?`,
+                choices: [
+                    { text: "if score >= 950:\n    등급 = 'SSS'\nelif score >= 900:\n    등급 = 'SS'", correct: true, explanation: "✅ 정답! 920 >= 900이므로 SS등급입니다!" },
+                    { text: "if score >= 900:\n    등급 = 'SS'\nelif score >= 950:\n    등급 = 'SSS'", correct: false, explanation: "❌ 순서가 중요! 첫 조건이 참이면 elif는 체크하지 않습니다." },
+                    { text: "if score == 900:\n    등급 = 'SS'", correct: false, explanation: "❌ ==는 정확히 같을 때만입니다. >= 를 써야 합니다!" },
+                    { text: "if score > 900:\n    등급 = 'SS'", correct: false, explanation: "❌ 900점도 SS이므로 >= 를 써야 합니다!" },
+                    { text: "if score <= 950:\n    등급 = 'SS'\nelif score <= 900:\n    등급 = 'S'", correct: false, explanation: "❌ 조건 방향이 반대입니다! 높은 점수부터 체크해야 합니다!" },
+                    { text: "if score > 950:\n    등급 = 'SSS'\nelif score > 900:\n    등급 = 'SS'", correct: false, explanation: "❌ 경계값(950, 900)도 포함해야 하므로 >= 를 사용해야 합니다!" }
+                ],
+                reward: { exp: 50, gold: 90 }
+            },
+            {
+                title: "🎲 Stage 14: 주사위 범위",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">🎲</span> <strong>주사위 판정!</strong><br><br>
+                <strong>문제:</strong> 주사위가 5 이상이면 '성공', 아니면 '실패'. dice = 4일 때?`,
+                choices: [
+                    { text: "if dice >= 5:\n    print('성공')\nelse:\n    print('실패')", correct: true, explanation: "✅ 정답! 4 < 5이므로 '실패'가 출력됩니다!" },
+                    { text: "if dice > 5:\n    print('성공')\nelse:\n    print('실패')", correct: false, explanation: "❌ 5도 성공이므로 >= 를 써야 합니다." },
+                    { text: "if dice <= 5:\n    print('성공')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if dice == 5:\n    print('성공')", correct: false, explanation: "❌ 5 이상이 성공입니다!" },
+                    { text: "if dice < 5:\n    print('성공')\nelse:\n    print('실패')", correct: false, explanation: "❌ 조건이 반대입니다! 5 이상일 때 성공해야 합니다!" },
+                    { text: "if dice != 5:\n    print('성공')", correct: false, explanation: "❌ 5가 아닐 때가 아니라 5 이상일 때 성공입니다!" }
+                ],
+                reward: { exp: 40, gold: 75 }
+            },
+            {
+                title: "💎 Stage 15: 아이템 등급",
+                scene: "shop",
+                character: "merchant",
+                message: `<span class="emoji">💎</span> <strong>아이템 등급 판정!</strong><br><br>
+                <strong>문제:</strong> 전설(90+), 영웅(70+), 희귀(50+), 일반(그외). 품질 = 75일 때?`,
+                choices: [
+                    { text: "if quality >= 90:\n    등급 = '전설'\nelif quality >= 70:\n    등급 = '영웅'", correct: true, explanation: "✅ 정답! 75 >= 70이므로 영웅 등급입니다!" },
+                    { text: "if quality >= 70:\n    등급 = '영웅'\nelif quality >= 90:\n    등급 = '전설'", correct: false, explanation: "❌ 순서가 중요합니다!" },
+                    { text: "if quality > 70:\n    등급 = '영웅'", correct: false, explanation: "❌ 70도 영웅이므로 >= 를 써야 합니다!" },
+                    { text: "if quality == 70:\n    등급 = '영웅'", correct: false, explanation: "❌ 70 이상이 영웅입니다!" },
+                    { text: "if quality <= 90:\n    등급 = '영웅'\nelif quality <= 70:\n    등급 = '희귀'", correct: false, explanation: "❌ 조건 방향이 반대입니다! 높은 값부터 체크해야 합니다!" },
+                    { text: "if quality > 90:\n    등급 = '전설'\nelif quality > 70:\n    등급 = '영웅'", correct: false, explanation: "❌ 경계값(90, 70)도 포함해야 하므로 >= 를 사용해야 합니다!" }
+                ],
+                reward: { exp: 50, gold: 95 }
+            },
+            {
+                title: "🛡️ Stage 16: 방어력 체크",
+                scene: "battle",
+                character: "enemy",
+                message: `<span class="emoji">🛡️</span> <strong>방어력 판정!</strong><br><br>
+                <strong>문제:</strong> 방어력이 100 이상이면 '강철', 50 이상이면 '가죽', 아니면 '천'. defense = 60일 때?`,
+                choices: [
+                    { text: "if defense >= 100:\n    방어구 = '강철'\nelif defense >= 50:\n    방어구 = '가죽'\nelse:\n    방어구 = '천'", correct: true, explanation: "✅ 정답! 60 >= 50이므로 '가죽'입니다!" },
+                    { text: "if defense >= 50:\n    방어구 = '가죽'\nelif defense >= 100:\n    방어구 = '강철'", correct: false, explanation: "❌ 순서가 중요합니다!" },
+                    { text: "if defense > 50:\n    방어구 = '가죽'", correct: false, explanation: "❌ 50도 가죽이므로 >= 를 써야 합니다!" },
+                    { text: "if defense == 50:\n    방어구 = '가죽'", correct: false, explanation: "❌ 50 이상이 가죽입니다!" },
+                    { text: "if defense < 100:\n    방어구 = '가죽'\nelse:\n    방어구 = '강철'", correct: false, explanation: "❌ 50 미만은 '천'이어야 합니다. 세분화가 필요합니다!" },
+                    { text: "if defense >= 100:\n    방어구 = '강철'\nelse:\n    방어구 = '가죽'", correct: false, explanation: "❌ 50 미만에 대한 처리가 빠졌습니다!" }
+                ],
+                reward: { exp: 55, gold: 100 }
+            },
+            {
+                title: "🔥 Stage 17: 공격력 범위",
+                scene: "battle",
+                character: "enemy",
+                message: `<span class="emoji">🔥</span> <strong>공격력 평가!</strong><br><br>
+                <strong>문제:</strong> 공격력이 150이상 '강함', 100이상 '보통', 아니면 '약함'. attack = 120일 때?`,
+                choices: [
+                    { text: "if attack >= 150:\n    평가 = '강함'\nelif attack >= 100:\n    평가 = '보통'\nelse:\n    평가 = '약함'", correct: true, explanation: "✅ 정답! 120 >= 100이므로 '보통'입니다!" },
+                    { text: "if attack > 150:\n    평가 = '강함'", correct: false, explanation: "❌ 150도 강함이므로 >= 를 써야 합니다!" },
+                    { text: "if attack >= 100:\n    평가 = '보통'\nelif attack >= 150:\n    평가 = '강함'", correct: false, explanation: "❌ 순서가 중요합니다!" },
+                    { text: "if attack == 100:\n    평가 = '보통'", correct: false, explanation: "❌ 100 이상이 보통입니다!" },
+                    { text: "if attack < 150:\n    평가 = '보통'\nelse:\n    평가 = '강함'", correct: false, explanation: "❌ 100 미만은 '약함'이어야 합니다. 세분화가 필요합니다!" },
+                    { text: "if attack > 150:\n    평가 = '강함'\nelif attack > 100:\n    평가 = '보통'", correct: false, explanation: "❌ 경계값(150, 100)도 포함해야 하므로 >= 를 사용해야 합니다!" }
+                ],
+                reward: { exp: 55, gold: 105 }
+            },
+            {
+                title: "⭐ Stage 18: 경험치 레벨업",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">⭐</span> <strong>레벨업 조건!</strong><br><br>
+                <strong>문제:</strong> 경험치가 1000 이상이면 레벨업. exp = 950일 때?`,
+                choices: [
+                    { text: "if exp >= 1000:\n    레벨업 = True\nelse:\n    레벨업 = False", correct: true, explanation: "✅ 정답! 950 < 1000이므로 레벨업하지 않습니다!" },
+                    { text: "if exp > 1000:\n    레벨업 = True", correct: false, explanation: "❌ 1000도 레벨업이므로 >= 를 써야 합니다!" },
+                    { text: "if exp < 1000:\n    레벨업 = True", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if exp == 1000:\n    레벨업 = True", correct: false, explanation: "❌ 1000 이상이 레벨업입니다!" },
+                    { text: "if exp <= 1000:\n    레벨업 = False\nelse:\n    레벨업 = True", correct: false, explanation: "❌ 1000도 레벨업에 포함되어야 하므로 조건이 잘못되었습니다!" },
+                    { text: "if exp != 1000:\n    레벨업 = True", correct: false, explanation: "❌ 1000이 아닐 때가 아니라 1000 이상일 때 레벨업합니다!" }
+                ],
+                reward: { exp: 60, gold: 110 }
+            },
+            {
+                title: "🎯 Stage 19: and 조건 - 퀘스트",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">📜</span> <strong>퀘스트 수락 조건!</strong><br><br>
+                <strong>문제:</strong> 레벨 5 이상이고 골드 200 이상이면 퀘스트 가능. level=7, gold=250일 때?`,
+                choices: [
+                    { text: "if level >= 5 and gold >= 200:\n    print('퀘스트 가능')", correct: true, explanation: "✅ 정답! 7>=5 그리고 250>=200 모두 참입니다!" },
+                    { text: "if level >= 5 or gold >= 200:\n    print('퀘스트 가능')", correct: false, explanation: "❌ 둘 다 만족해야 하므로 and를 써야 합니다!" },
+                    { text: "if level > 5 and gold > 200:\n    print('퀘스트 가능')", correct: false, explanation: "❌ 5와 200도 포함이므로 >= 를 써야 합니다!" },
+                    { text: "if level >= 5:\n    print('퀘스트 가능')", correct: false, explanation: "❌ 골드 조건도 확인해야 합니다!" }
+                ],
+                reward: { exp: 65, gold: 120 }
+            },
+            {
+                title: "🏰 Stage 20: and 조건 - 던전 입장",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">🏰</span> <strong>던전 입장 조건!</strong><br><br>
+                <strong>문제:</strong> 레벨 20 이상, 파티원 4명, 준비완료. level=25, party=4, ready=True일 때?`,
+                choices: [
+                    { text: "if level >= 20 and party >= 4 and ready:\n    print('입장!')", correct: true, explanation: "✅ 정답! 세 조건 모두 참입니다!" },
+                    { text: "if level >= 20 or party >= 4:\n    print('입장!')", correct: false, explanation: "❌ 모든 조건이 필요하므로 and를 써야 합니다!" },
+                    { text: "if level >= 20 and party >= 4:\n    print('입장!')", correct: false, explanation: "❌ ready 조건도 확인해야 합니다!" },
+                    { text: "if level > 20 and party > 4:\n    print('입장!')", correct: false, explanation: "❌ 20과 4도 포함이므로 >= 를 써야 합니다!" },
+                    { text: "if level >= 20 or party >= 4 or ready:\n    print('입장!')", correct: false, explanation: "❌ 모든 조건을 동시에 만족해야 하므로 and를 사용해야 합니다!" },
+                    { text: "if level >= 20 and (party >= 4 or ready):\n    print('입장!')", correct: false, explanation: "❌ 파티원과 준비 모두 필요합니다. or가 아니라 and여야 합니다!" }
+                ],
+                reward: { exp: 70, gold: 130 }
+            },
+            {
+                title: "💼 Stage 21: and 조건 - 거래 가능",
+                scene: "shop",
+                character: "merchant",
+                message: `<span class="emoji">💼</span> <strong>거래 조건!</strong><br><br>
+                <strong>문제:</strong> 신뢰도 80 이상, 레벨 10 이상이면 거래 가능. trust=85, level=12일 때?`,
+                choices: [
+                    { text: "if trust >= 80 and level >= 10:\n    print('거래 가능')", correct: true, explanation: "✅ 정답! 85>=80 그리고 12>=10, 모두 참입니다!" },
+                    { text: "if trust >= 80 or level >= 10:\n    print('거래 가능')", correct: false, explanation: "❌ 둘 다 필요하므로 and를 써야 합니다!" },
+                    { text: "if trust > 80 and level > 10:\n    print('거래 가능')", correct: false, explanation: "❌ 80과 10도 포함이므로 >= 를 써야 합니다!" },
+                    { text: "if trust >= 80:\n    print('거래 가능')", correct: false, explanation: "❌ 레벨 조건도 확인해야 합니다!" },
+                    { text: "if trust == 80 and level == 10:\n    print('거래 가능')", correct: false, explanation: "❌ 정확한 값이 아니라 이상일 때이므로 >= 를 써야 합니다!" },
+                    { text: "if level >= 10 and trust >= 80:\n    print('거래 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 문제에서 신뢰도를 먼저 확인했습니다!" }
+                ],
+                reward: { exp: 65, gold: 125 }
+            },
+            {
+                title: "🎪 Stage 22: or 조건 - 이벤트 참가",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">🎪</span> <strong>이벤트 참가 자격!</strong><br><br>
+                <strong>문제:</strong> 레벨 30 이상 또는 VIP면 참가 가능. level=25, vip=True일 때?`,
+                choices: [
+                    { text: "if level >= 30 or vip:\n    print('참가 가능')", correct: true, explanation: "✅ 정답! vip가 True이므로 참가 가능합니다!" },
+                    { text: "if level >= 30 and vip:\n    print('참가 가능')", correct: false, explanation: "❌ 하나만 만족해도 되므로 or를 써야 합니다!" },
+                    { text: "if level > 30 or vip:\n    print('참가 가능')", correct: false, explanation: "❌ 30도 포함이므로 >= 를 써야 합니다!" },
+                    { text: "if vip == True:\n    print('참가 가능')", correct: false, explanation: "❌ 레벨 조건도 or로 연결해야 합니다!" },
+                    { text: "if level >= 30:\n    print('참가 가능')\nelif vip:\n    print('참가 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만 or로 한 줄로 쓸 수 있습니다!" },
+                    { text: "if vip or level >= 30:\n    print('참가 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 문제에서 레벨을 먼저 언급했습니다!" }
+                ],
+                reward: { exp: 70, gold: 135 }
+            },
+            {
+                title: "🎁 Stage 23: or 조건 - 보상 수령",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🎁</span> <strong>보상 수령 조건!</strong><br><br>
+                <strong>문제:</strong> 퀘스트 완료 또는 이벤트 참가 시 보상. quest=False, event=True일 때?`,
+                choices: [
+                    { text: "if quest or event:\n    print('보상 수령!')", correct: true, explanation: "✅ 정답! event가 True이므로 보상을 받습니다!" },
+                    { text: "if quest and event:\n    print('보상 수령!')", correct: false, explanation: "❌ 하나만 True여도 되므로 or를 써야 합니다!" },
+                    { text: "if quest:\n    print('보상 수령!')", correct: false, explanation: "❌ 이벤트 조건도 or로 확인해야 합니다!" },
+                    { text: "if quest == True or event == True:\n    print('보상 수령!')", correct: false, explanation: "⚠️ 맞지만 간단하게 if quest or event: 로 쓸 수 있습니다!" },
+                    { text: "if quest == True and event == True:\n    print('보상 수령!')", correct: false, explanation: "❌ 둘 다 True일 필요 없고, 하나만 True면 됩니다!" },
+                    { text: "if event:\n    print('보상 수령!')", correct: false, explanation: "❌ 퀴스트 조건도 or로 확인해야 합니다!" }
+                ],
+                reward: { exp: 70, gold: 140 }
+            },
+            {
+                title: "🚪 Stage 24: or 조건 - 출입 허가",
+                scene: "vip",
+                character: "guard",
+                message: `<span class="emoji">🚪</span> <strong>출입 허가 조건!</strong><br><br>
+                <strong>문제:</strong> 관리자 또는 레벨 50 이상이면 출입 가능. admin=False, level=55일 때?`,
+                choices: [
+                    { text: "if admin or level >= 50:\n    print('출입 가능')", correct: true, explanation: "✅ 정답! 55>=50이므로 출입 가능합니다!" },
+                    { text: "if admin and level >= 50:\n    print('출입 가능')", correct: false, explanation: "❌ 하나만 만족해도 되므로 or를 써야 합니다!" },
+                    { text: "if admin or level > 50:\n    print('출입 가능')", correct: false, explanation: "❌ 50도 포함이므로 >= 를 써야 합니다!" },
+                    { text: "if level >= 50:\n    print('출입 가능')", correct: false, explanation: "❌ admin 조건도 or로 연결해야 합니다!" },
+                    { text: "if admin:\n    print('출입 가능')\nelif level >= 50:\n    print('출입 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만 or로 한 줄로 쓸 수 있습니다!" },
+                    { text: "if level >= 50 or admin:\n    print('출입 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 문제에서 관리자를 먼저 언급했습니다!" }
+                ],
+                reward: { exp: 75, gold: 145 }
+            },
+            {
+                title: "⚔️ Stage 25: 복합 조건 - 전투 가능",
+                scene: "battle",
+                character: "enemy",
+                message: `<span class="emoji">⚔️</span> <strong>전투 가능 여부!</strong><br><br>
+                <strong>문제:</strong> HP 30 이상이고 (무기 있음 또는 마법 가능). hp=50, weapon=False, magic=True일 때?`,
+                choices: [
+                    { text: "if hp >= 30 and (weapon or magic):\n    print('전투 가능')", correct: true, explanation: "✅ 정답! 50>=30 그리고 magic이 True이므로 전투 가능!" },
+                    { text: "if hp >= 30 and weapon or magic:\n    print('전투 가능')", correct: false, explanation: "❌ 괄호가 없으면 우선순위가 달라집니다!" },
+                    { text: "if hp >= 30 or weapon or magic:\n    print('전투 가능')", correct: false, explanation: "❌ HP는 반드시 필요하므로 and를 써야 합니다!" },
+                    { text: "if hp > 30 and weapon and magic:\n    print('전투 가능')", correct: false, explanation: "❌ 30도 포함이고, 무기와 마법 중 하나만 있어도 됩니다!" },
+                    { text: "if (hp >= 30 and weapon) or magic:\n    print('전투 가늩')", correct: false, explanation: "❌ 괄호 위치가 잘못되었습니다. HP는 항상 필요합니다!" },
+                    { text: "if hp >= 30 and weapon and magic:\n    print('전투 가능')", correct: false, explanation: "❌ 무기와 마법 모두 필요한 것이 아니라 하나만 있어도 됩니다!" }
+                ],
+                reward: { exp: 80, gold: 160 }
+            },
+            {
+                title: "🎯 Stage 26: 복합 조건 - 스킬 사용",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">✨</span> <strong>스킬 사용 조건!</strong><br><br>
+                <strong>문제:</strong> 레벨 15 이상이고 (마나 50 이상 또는 포션 있음). level=20, mana=30, potion=True일 때?`,
+                choices: [
+                    { text: "if level >= 15 and (mana >= 50 or potion):\n    print('스킬 사용')", correct: true, explanation: "✅ 정답! 20>=15 그리고 potion이 True이므로 사용 가능!" },
+                    { text: "if level >= 15 and mana >= 50 or potion:\n    print('스킬 사용')", correct: false, explanation: "❌ 괄호가 중요합니다!" },
+                    { text: "if level >= 15 or mana >= 50 or potion:\n    print('스킬 사용')", correct: false, explanation: "❌ 레벨은 반드시 필요합니다!" },
+                    { text: "if level > 15 and mana > 50:\n    print('스킬 사용')", correct: false, explanation: "❌ 조건이 너무 엄격합니다!" },
+                    { text: "if (level >= 15 and mana >= 50) or potion:\n    print('스킬 사용')", correct: false, explanation: "❌ 괄호 위치가 잘못되었습니다. 레벨은 항상 필요합니다!" },
+                    { text: "if level >= 15 and mana >= 50 and potion:\n    print('스킬 사용')", correct: false, explanation: "❌ 마나와 포션 중 하나만 있어도 됩니다!" }
+                ],
+                reward: { exp: 85, gold: 170 }
+            },
+            {
+                title: "🏆 Stage 27: 복합 조건 - 보스 도전",
+                scene: "boss",
+                character: "dragon",
+                message: `<span class="emoji">🐉</span> <strong>보스 도전 자격!</strong><br><br>
+                <strong>문제:</strong> (레벨 40 이상 또는 VIP) 그리고 파티원 3명 이상. level=35, vip=True, party=4일 때?`,
+                choices: [
+                    { text: "if (level >= 40 or vip) and party >= 3:\n    print('도전 가능')", correct: true, explanation: "✅ 정답! vip가 True이고 4>=3이므로 도전 가능!" },
+                    { text: "if level >= 40 or vip and party >= 3:\n    print('도전 가능')", correct: false, explanation: "❌ 괄호 위치가 중요합니다!" },
+                    { text: "if level >= 40 and vip and party >= 3:\n    print('도전 가능')", correct: false, explanation: "❌ 레벨과 VIP는 or 관계입니다!" },
+                    { text: "if level >= 40 or vip or party >= 3:\n    print('도전 가능')", correct: false, explanation: "❌ 파티원은 반드시 필요합니다!" },
+                    { text: "if level >= 40 and party >= 3 or vip:\n    print('도전 가능')", correct: false, explanation: "❌ 괄호가 없으면 연산 순서가 달라집니다!" },
+                    { text: "if (level >= 40 and party >= 3) or (vip and party >= 3):\n    print('도전 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 더 간결하게 쓸 수 있습니다!" }
+                ],
+                reward: { exp: 90, gold: 180 }
+            },
+            {
+                title: "💫 Stage 28: != 연산자",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">💫</span> <strong>같지 않음 체크!</strong><br><br>
+                <strong>문제:</strong> 상태가 '죽음'이 아니면 행동 가능. status = '살아있음'일 때?`,
+                choices: [
+                    { text: "if status != '죽음':\n    print('행동 가능')", correct: true, explanation: "✅ 정답! '살아있음' != '죽음'이므로 행동 가능!" },
+                    { text: "if status == '죽음':\n    print('행동 가능')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if status = '죽음':\n    print('행동 가능')", correct: false, explanation: "❌ 비교는 ==나 !=를 사용해야 합니다!" },
+                    { text: "if status > '죽음':\n    print('행동 가늩')", correct: false, explanation: "❌ 문자열 비교에는 != 를 사용하세요!" },
+                    { text: "if status == '살아있음':\n    print('행동 가능')", correct: false, explanation: "❌ 죽음이 아닌 모든 상태를 포함하려면 != 를 사용해야 합니다!" },
+                    { text: "if not status == '죽음':\n    print('행동 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, != 로 더 간결하게 쓸 수 있습니다!" }
+                ],
+                reward: { exp: 75, gold: 150 }
+            },
+            {
+                title: "🔐 Stage 29: 문자열 비교",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🔐</span> <strong>비밀번호 확인!</strong><br><br>
+                <strong>문제:</strong> 비밀번호가 'admin123'이면 로그인. password = 'admin123'일 때?`,
+                choices: [
+                    { text: "if password == 'admin123':\n    print('로그인 성공')", correct: true, explanation: "✅ 정답! 비밀번호가 정확히 일치합니다!" },
+                    { text: "if password != 'admin123':\n    print('로그인 성공')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if password = 'admin123':\n    print('로그인 성공')", correct: false, explanation: "❌ 비교는 ==를 사용해야 합니다!" },
+                    { text: "if password >= 'admin123':\n    print('로그인 성공')", correct: false, explanation: "❌ 정확한 일치를 확인할 때는 ==를 사용하세요!" },
+                    { text: "if password > 'admin123':\n    print('로그인 성공')", correct: false, explanation: "❌ 문자열이 크다는 조건이 아니라 정확히 같은지 확인해야 합니다!" },
+                    { text: "if password == 'Admin123':\n    print('로그인 성공')", correct: false, explanation: "❌ 대소문자가 다릅니다! Python은 대소문자를 구분합니다!" }
+                ],
+                reward: { exp: 75, gold: 155 }
+            },
+            {
+                title: "🎮 Stage 30: Boolean 직접 체크",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">🎮</span> <strong>Boolean 값 체크!</strong><br><br>
+                <strong>문제:</strong> 게임 오버가 아니면 계속 진행. game_over = False일 때?`,
+                choices: [
+                    { text: "if not game_over:\n    print('계속 진행')", correct: true, explanation: "✅ 정답! not False는 True이므로 계속 진행!" },
+                    { text: "if game_over:\n    print('계속 진행')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if game_over == False:\n    print('계속 진행')", correct: false, explanation: "⚠️ 맞지만 not game_over가 더 간결합니다!" },
+                    { text: "if game_over != True:\n    print('계속 진행')", correct: false, explanation: "⚠️ 맞지만 not game_over가 더 파이썬스럽습니다!" },
+                    { text: "if game_over == True:\n    print('계속 진행')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if game_over is False:\n    print('계속 진행')", correct: false, explanation: "⚠️ 맞지만 not game_over가 더 일반적입니다!" }
+                ],
+                reward: { exp: 80, gold: 160 }
+            },
+            {
+                title: "🌟 Stage 31: 범위 체크 1",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">🌟</span> <strong>범위 안에 있는지 체크!</strong><br><br>
+                <strong>문제:</strong> 점수가 60 이상 100 이하면 합격. score = 75일 때?`,
+                choices: [
+                    { text: "if score >= 60 and score <= 100:\n    print('합격')", correct: true, explanation: "✅ 정답! 75는 60과 100 사이입니다!" },
+                    { text: "if score >= 60 or score <= 100:\n    print('합격')", correct: false, explanation: "❌ 범위는 and로 확인해야 합니다!" },
+                    { text: "if score > 60 and score < 100:\n    print('합격')", correct: false, explanation: "❌ 60과 100도 포함이므로 >=, <=를 써야 합니다!" },
+                    { text: "if score == 60 and score == 100:\n    print('합격')", correct: false, explanation: "❌ 범위를 확인할 때는 >=, <=를 사용하세요!" },
+                    { text: "if score <= 100 and score >= 60:\n    print('합격')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 작은 값부터 비교하는 것이 읽기 쉽습니다!" },
+                    { text: "if 60 <= score <= 100:\n    print('합격')", correct: false, explanation: "⚠️ Python에서 가능하지만 명시적으로 쓰는 것이 더 좋습니다!" }
+                ],
+                reward: { exp: 85, gold: 165 }
+            },
+            {
+                title: "📊 Stage 32: 범위 체크 2",
+                scene: "shop",
+                character: "merchant",
+                message: `<span class="emoji">📊</span> <strong>가격 범위 체크!</strong><br><br>
+                <strong>문제:</strong> 가격이 1000원 이상 5000원 이하면 구매. price = 3500일 때?`,
+                choices: [
+                    { text: "if price >= 1000 and price <= 5000:\n    print('구매 가능')", correct: true, explanation: "✅ 정답! 3500은 1000과 5000 사이입니다!" },
+                    { text: "if price >= 1000 or price <= 5000:\n    print('구매 가능')", correct: false, explanation: "❌ 범위는 and로 확인해야 합니다!" },
+                    { text: "if price > 1000 and price < 5000:\n    print('구매 가능')", correct: false, explanation: "❌ 1000과 5000도 포함이므로 >=, <=를 써야 합니다!" },
+                    { text: "if 1000 <= price <= 5000:\n    print('구매 가능')", correct: false, explanation: "⚠️ 파이썬에서 가능하지만 명시적으로 쓰는 것이 더 좋습니다!" },
+                    { text: "if price <= 5000 and price >= 1000:\n    print('구매 가능')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 작은 값부터 비교하는 것이 읽기 쉽습니다!" },
+                    { text: "if price == 1000 or price == 5000:\n    print('구매 가능')", correct: false, explanation: "❌ 정확한 값이 아니라 범위를 확인해야 합니다!" }
+                ],
+                reward: { exp: 85, gold: 170 }
+            },
+            {
+                title: "⚡ Stage 33: 범위 밖 체크",
+                scene: "battle",
+                character: "enemy",
+                message: `<span class="emoji">⚡</span> <strong>범위 밖 체크!</strong><br><br>
+                <strong>문제:</strong> 데미지가 0 미만이거나 999 초과면 오류. damage = 1500일 때?`,
+                choices: [
+                    { text: "if damage < 0 or damage > 999:\n    print('오류')", correct: true, explanation: "✅ 정답! 1500 > 999이므로 오류입니다!" },
+                    { text: "if damage < 0 and damage > 999:\n    print('오류')", correct: false, explanation: "❌ 둘 중 하나라도 만족하면 오류이므로 or를 써야 합니다!" },
+                    { text: "if damage <= 0 or damage >= 999:\n    print('오류')", correct: false, explanation: "❌ 0과 999는 정상 범위입니다!" },
+                    { text: "if damage >= 0 and damage <= 999:\n    print('오류')", correct: false, explanation: "❌ 조건이 반대입니다!" },
+                    { text: "if not (damage >= 0 and damage <= 999):\n    print('오류')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 더 간단하게 표현할 수 있습니다!" },
+                    { text: "if damage > 999 or damage < 0:\n    print('오류')", correct: false, explanation: "⚠️ 논리적으로는 맞지만, 일반적으로 작은 값 조건을 먼저 쓰는 것이 좋습니다!" }
+                ],
+                reward: { exp: 90, gold: 175 }
+            },
+            {
+                title: "🎯 Stage 34: 다중 elif 1",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🎯</span> <strong>시간대별 메시지!</strong><br><br>
+                <strong>문제:</strong> 새벽(0-5), 아침(6-11), 점심(12-17), 저녁(18-23). hour = 14일 때?`,
+                choices: [
+                    { text: "if hour <= 5:\n    시간대 = '새벽'\nelif hour <= 11:\n    시간대 = '아침'\nelif hour <= 17:\n    시간대 = '점심'\nelse:\n    시간대 = '저녁'", correct: true, explanation: "✅ 정답! 14 <= 17이므로 '점심'입니다!" },
+                    { text: "if hour <= 5:\n    시간대 = '새벽'\nelse:\n    시간대 = '아침'", correct: false, explanation: "❌ elif가 없어서 세밀한 구분이 불가능합니다!" },
+                    { text: "if hour == 14:\n    시간대 = '점심'", correct: false, explanation: "❌ 범위를 확인해야 합니다!" },
+                    { text: "if hour >= 12:\n    시간대 = '점심'\nelif hour <= 17:\n    시간대 = '점심'", correct: false, explanation: "❌ and로 범위를 확인해야 합니다!" }
+                ],
+                reward: { exp: 90, gold: 180 }
+            },
+            {
+                title: "🏅 Stage 35: 다중 elif 2",
+                scene: "shop",
+                character: "merchant",
+                message: `<span class="emoji">🏅</span> <strong>회원 등급별 할인!</strong><br><br>
+                <strong>문제:</strong> 다이아(30%), 골드(20%), 실버(10%), 일반(0%). grade = '골드'일 때?`,
+                choices: [
+                    { text: "if grade == '다이아':\n    할인 = 30\nelif grade == '골드':\n    할인 = 20\nelif grade == '실버':\n    할인 = 10\nelse:\n    할인 = 0", correct: true, explanation: "✅ 정답! '골드'이므로 20% 할인입니다!" },
+                    { text: "if grade == '다이아':\n    할인 = 30\nelse:\n    할인 = 20", correct: false, explanation: "❌ elif가 없어서 모든 등급을 구분할 수 없습니다!" },
+                    { text: "if grade != '다이아':\n    할인 = 20", correct: false, explanation: "❌ 다이아가 아닌 경우를 세밀하게 구분해야 합니다!" },
+                    { text: "if grade >= '골드':\n    할인 = 20", correct: false, explanation: "❌ 문자열 비교에는 ==를 사용하세요!" }
+                ],
+                reward: { exp: 90, gold: 185 }
+            },
+            {
+                title: "🌈 Stage 36: 다중 elif 3",
+                scene: "village",
+                character: "villager",
+                message: `<span class="emoji">🌈</span> <strong>날씨별 활동!</strong><br><br>
+                <strong>문제:</strong> 맑음(산책), 흐림(독서), 비(게임), 눈(눈사람). weather = '비'일 때?`,
+                choices: [
+                    { text: "if weather == '맑음':\n    활동 = '산책'\nelif weather == '흐림':\n    활동 = '독서'\nelif weather == '비':\n    활동 = '게임'\nelse:\n    활동 = '눈사람'", correct: true, explanation: "✅ 정답! '비'이므로 '게임'입니다!" },
+                    { text: "if weather == '맑음':\n    활동 = '산책'\nelse:\n    활동 = '독서'", correct: false, explanation: "❌ elif가 부족합니다!" },
+                    { text: "if weather != '맑음':\n    활동 = '게임'", correct: false, explanation: "❌ 모든 경우를 세밀하게 구분해야 합니다!" },
+                    { text: "if weather == '비' or weather == '눈':\n    활동 = '게임'", correct: false, explanation: "❌ 비와 눈의 활동은 다릅니다!" }
+                ],
+                reward: { exp: 90, gold: 190 }
+            },
+            {
+                title: "🎨 Stage 37: 중첩 if 1",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">🎨</span> <strong>중첩된 조건!</strong><br><br>
+                <strong>문제:</strong> 레벨 10 이상이면, 그 중 골드 500 이상이면 프리미엄. level=15, gold=600일 때?`,
+                choices: [
+                    { text: "if level >= 10:\n    if gold >= 500:\n        등급 = '프리미엄'\n    else:\n        등급 = '일반'\nelse:\n    등급 = '초보'", correct: true, explanation: "✅ 정답! 15>=10 그리고 600>=500이므로 '프리미엄'!" },
+                    { text: "if level >= 10 and gold >= 500:\n    등급 = '프리미엄'", correct: false, explanation: "⚠️ 맞지만 중첩 if 문제입니다!" },
+                    { text: "if level >= 10:\n    등급 = '프리미엄'", correct: false, explanation: "❌ 골드 조건도 확인해야 합니다!" },
+                    { text: "if gold >= 500:\n    등급 = '프리미엄'", correct: false, explanation: "❌ 레벨 조건을 먼저 확인해야 합니다!" }
+                ],
+                reward: { exp: 95, gold: 195 }
+            },
+            {
+                title: "💎 Stage 38: 중첩 if 2",
+                scene: "shop",
+                character: "merchant",
+                message: `<span class="emoji">💎</span> <strong>세밀한 분류!</strong><br><br>
+                <strong>문제:</strong> VIP면 골드>1000이면 'VIP골드', 아니면 'VIP실버'. vip=True, gold=1500일 때?`,
+                choices: [
+                    { text: "if vip:\n    if gold > 1000:\n        등급 = 'VIP골드'\n    else:\n        등급 = 'VIP실버'\nelse:\n    등급 = '일반'", correct: true, explanation: "✅ 정답! VIP이고 1500>1000이므로 'VIP골드'!" },
+                    { text: "if vip and gold > 1000:\n    등급 = 'VIP골드'", correct: false, explanation: "⚠️ 맞지만 중첩 if 연습입니다!" },
+                    { text: "if vip:\n    등급 = 'VIP골드'", correct: false, explanation: "❌ 골드 액수로 세분화해야 합니다!" },
+                    { text: "if gold > 1000:\n    등급 = 'VIP골드'", correct: false, explanation: "❌ VIP 여부를 먼저 확인해야 합니다!" }
+                ],
+                reward: { exp: 95, gold: 200 }
+            },
+            {
+                title: "⚔️ Stage 39: 실전 - 전투 결정",
+                scene: "battle",
+                character: "enemy",
+                message: `<span class="emoji">⚔️</span> <strong>전투 AI 결정!</strong><br><br>
+                <strong>문제:</strong> HP<20이고 포션 있으면 '회복', HP>적HP면 '공격', 아니면 '방어'. hp=15, potion=True, enemy_hp=50일 때?`,
+                choices: [
+                    { text: "if hp < 20 and potion:\n    행동 = '회복'\nelif hp > enemy_hp:\n    행동 = '공격'\nelse:\n    행동 = '방어'", correct: true, explanation: "✅ 정답! 15<20 그리고 포션이 있으므로 '회복'!" },
+                    { text: "if hp < 20:\n    행동 = '회복'", correct: false, explanation: "❌ 포션 여부도 확인해야 합니다!" },
+                    { text: "if hp > enemy_hp:\n    행동 = '공격'", correct: false, explanation: "❌ HP가 낮을 때 회복을 먼저 확인해야 합니다!" },
+                    { text: "if hp < 20 or potion:\n    행동 = '회복'", correct: false, explanation: "❌ HP가 낮고 포션이 있을 때만 회복해야 합니다!" }
+                ],
+                reward: { exp: 100, gold: 210 }
+            },
+            {
+                title: "🎯 Stage 40: 실전 - 스킬 선택",
+                scene: "dungeon",
+                character: "guardian",
+                message: `<span class="emoji">✨</span> <strong>스킬 우선순위!</strong><br><br>
+                <strong>문제:</strong> 궁극기(마나>=100), 특수기(마나>=50), 기본공격(그외). mana=75일 때?`,
+                choices: [
+                    { text: "if mana >= 100:\n    스킬 = '궁극기'\nelif mana >= 50:\n    스킬 = '특수기'\nelse:\n    스킬 = '기본공격'", correct: true, explanation: "✅ 정답! 75>=50이므로 '특수기'!" },
+                    { text: "if mana >= 50:\n    스킬 = '특수기'\nelif mana >= 100:\n    스킬 = '궁극기'", correct: false, explanation: "❌ 순서가 중요합니다!" },
+                    { text: "if mana == 100:\n    스킬 = '궁극기'", correct: false, explanation: "❌ 100 이상일 때 궁극기입니다!" },
+                    { text: "if mana > 50:\n    스킬 = '특수기'", correct: false, explanation: "❌ 50도 포함이어야 합니다!" }
+                ],
+                reward: { exp: 100, gold: 220 }
+            },
+            {
+                title: "🎁 Stage 41: 실전 - 보상 계산",
+                scene: "guild",
+                character: "guildmaster",
+                message: `<span class="emoji">🎁</span> <strong>보상 배율!</strong><br><br>
+                <strong>문제:</strong> VIP이고 레벨30+면 3배, VIP면 2배, 레벨30+면 1.5배, 아니면 1배. vip=True, level=25일 때?`,
+                choices: [
+                    { text: "if vip and level >= 30:\n    배율 = 3\nelif vip:\n    배율 = 2\nelif level >= 30:\n    배율 = 1.5\nelse:\n    배율 = 1", correct: true, explanation: "✅ 정답! VIP이고 레벨<30이므로 2배!" },
+                    { text: "if vip:\n    배율 = 2\nelif level >= 30:\n    배율 = 1.5", correct: false, explanation: "❌ VIP+레벨30 조건을 먼저 확인해야 합니다!" },
+                    { text: "if vip or level >= 30:\n    배율 = 3", correct: false, explanation: "❌ VIP와 레벨30을 동시에 만족할 때만 3배입니다!" },
+                    { text: "if level >= 30:\n    배율 = 1.5", correct: false, explanation: "❌ VIP 조건을 먼저 확인해야 합니다!" }
+                ],
+                reward: { exp: 110, gold: 230 }
+            },
+            {
+                title: "🏆 Stage 42: 최종 보스 - 완벽한 판단",
+                scene: "boss",
+                character: "dragon",
+                message: `<span class="emoji">🔥</span> <strong>최종 시험!</strong><br><br>
+                <strong>문제:</strong> (레벨>=50 또는 VIP)이고 (파티>=3 그리고 준비완료)이고 골드>=1000. level=45, vip=True, party=4, ready=True, gold=1200일 때?`,
+                choices: [
+                    { text: "if (level >= 50 or vip) and (party >= 3 and ready) and gold >= 1000:\n    print('최종 보스 도전!')", correct: true, explanation: "✅ 완벽합니다! 조건문 마스터 달성! 모든 조건을 만족합니다!" },
+                    { text: "if level >= 50 and vip and party >= 3:\n    print('최종 보스 도전!')", correct: false, explanation: "❌ 조건 연결이 부정확합니다!" },
+                    { text: "if (level >= 50 or vip) and party >= 3:\n    print('최종 보스 도전!')", correct: false, explanation: "❌ ready와 gold 조건도 확인해야 합니다!" },
+                    { text: "if level >= 50 or vip or party >= 3:\n    print('최종 보스 도전!')", correct: false, explanation: "❌ 괄호와 and/or 사용이 잘못되었습니다!" }
+                ],
+                reward: { exp: 150, gold: 300 }
+            }
+        ];
+
+        // 씬 배경 색상
+        const sceneColors = {
+            village: { bg: '#2a4858', fg: '#3d6b7f' },
+            shop: { bg: '#583a2a', fg: '#7f5c3d' },
+            guild: { bg: '#4a3a58', fg: '#6b4f7f' },
+            battle: { bg: '#582a2a', fg: '#7f3d3d' },
+            dungeon: { bg: '#2a2a58', fg: '#3d3d7f' },
+            vip: { bg: '#584a2a', fg: '#7f6b3d' },
+            boss: { bg: '#3a1a1a', fg: '#5c2a2a' }
+        };
+
+        // 캐릭터 픽셀 아트 데이터 (64x64)
+        const pixelCharacters = {
+            player: './player.png',
+            villager: './monster.png',
+            merchant: './monster.png',
+            guildmaster: './monster.png',
+            enemy: './monster.png',
+            guardian: './monster.png',
+            guard: './monster.png',
+            dragon: './monster.png'
+        };
+
+        // 배경 이미지 정의
+        const backgroundImages = {
+            'stage1-6': './stage1~6.png',
+            'stage7-13': './stage7~13.png',
+            'stage14-20': './stage14~20.png',
+            'stage21-27': './stage21~27.png',
+            'stage28-42': './stage28~42.png'
+        };
+
+        // 현재 스테이지에 따라 배경 이미지 선택
+        function getBackgroundImage(stageNumber) {
+            if (stageNumber <= 6) return backgroundImages['stage1-6'];
+            if (stageNumber <= 13) return backgroundImages['stage7-13'];
+            if (stageNumber <= 20) return backgroundImages['stage14-20'];
+            if (stageNumber <= 27) return backgroundImages['stage21-27'];
+            return backgroundImages['stage28-42'];
+        }
+
+        const colorMap = {
+            'X': '#4299e1', // 플레이어 갑옷 - 파랑
+            'H': '#8b4513', // 헬멧/머리 - 갈색
+            'Y': '#ffd7a8', // 피부 - 살색
+            'A': '#000000', // 눈/디테일 - 검정
+            'B': '#2c5aa0', // 갑옷 어깨 - 진한 파랑
+            'S': '#c0c0c0', // 갑옷/무기 - 은색
+            'L': '#654321', // 부츠 - 갈색
+            'G': '#90ee90', // 마을사람 옷 - 연두색
+            'O': '#ff8c00', // 상인 옷 - 주황색
+            'M': '#8b4513', // 상인 가방 - 갈색
+            'C': '#ffd700', // 왕관/장식 - 금색
+            'R': '#8b0000', // 적 몸 - 진홍색
+            'P': '#9370db', // 수호자 - 보라색
+            'D': '#dc143c', // 드래곤 - 진한 빨강
+            'F': '#ff4500'  // 드래곤 눈 - 주황빨강
+        };
+
+        // 이미지 캐시 (로드된 이미지 저장)
+        const imageCache = {};
+
+        // 이미지 로더 함수 (PNG, JPG, GIF 지원)
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                if (imageCache[src]) {
+                    console.log(`✅ 캐시에서 이미지 로드: ${src}`);
+                    resolve(imageCache[src]);
+                    return;
+                }
+                
+                const img = new Image();
+                let loaded = false;
+                
+                img.onload = () => {
+                    if (loaded) return;
+                    loaded = true;
+                    imageCache[src] = img;
+                    console.log(`✅ 이미지 로드 완료: ${src} (크기: ${img.width}x${img.height})`);
+                    resolve(img);
+                };
+                
+                img.onerror = (e) => {
+                    if (loaded) return;
+                    loaded = true;
+                    console.error(`❌ 이미지 로드 실패: ${src}`, e);
+                    console.warn(`ℹ️ 파일이 존재하는지 확인하세요: C:\\Users\\Admin\\Desktop\\${src.replace('./', '')}`);
+                    reject(new Error(`Failed to load image: ${src}`));
+                };
+                
+                // 타임아웃 (5초)
+                setTimeout(() => {
+                    if (!loaded) {
+                        loaded = true;
+                        console.error(`⏱️ 이미지 로드 타임아웃: ${src}`);
+                        reject(new Error(`Timeout loading image: ${src}`));
+                    }
+                }, 5000);
+                
+                // PNG, JPG, GIF 모두 지원 (GIF 애니메이션 포함)
+                img.src = src;
+                console.log(`🔄 이미지 로딩 시작: ${src}`);
+            });
+        }
+
+        // 이미지 프리로드
+        async function preloadImages() {
+            const uniquePaths = new Set();
+            
+            // 중복 제거하여 고유한 이미지 경로만 추출
+            for (const [key, value] of Object.entries(pixelCharacters)) {
+                if (typeof value === 'string') {
+                    uniquePaths.add(value);
+                }
+            }
+            
+            // 배경 이미지 추가
+            for (const [key, value] of Object.entries(backgroundImages)) {
+                uniquePaths.add(value);
+            }
+            
+            console.log('📦 로드할 이미지 목록:', Array.from(uniquePaths));
+            
+            const loadPromises = Array.from(uniquePaths).map(path => 
+                loadImage(path).catch(err => {
+                    console.warn(`이미지 로드 실패 (${path}):`, err.message);
+                })
+            );
+            
+            await Promise.all(loadPromises);
+            console.log('🎉 모든 이미지 로드 완료!');
+            console.log('📸 캐시된 이미지:', Object.keys(imageCache));
+            
+            // 각 이미지 상태 확인
+            for (const [path, img] of Object.entries(imageCache)) {
+                console.log(`  - ${path}: ${img.naturalWidth}x${img.naturalHeight}`);
+            }
+            
+            // 이미지 로드 후 강제로 다시 그리기
+            if (animationFrameId) {
+                drawScene();
+            }
+        }
+
+        // 게임 시작
+        async function startGame() {
+            try {
+                const overlay = document.getElementById('tutorialOverlay');
+                
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+                
+                console.log('🎮 게임 시작!');
+                console.log('📁 현재 위치:', window.location.href);
+                console.log('🖼️ 로드할 이미지:', Object.entries(pixelCharacters)
+                    .filter(([k, v]) => typeof v === 'string')
+                    .map(([k, v]) => `${k}: ${v}`));
+                
+                // 이미지 프리로드
+                await preloadImages();
+                
+                // 첫 문제도 랜덤으로 선택
+                const firstStageIndex = Math.floor(Math.random() * stages.length);
+                gameState.usedStages.push(firstStageIndex);
+                gameState.currentStage = firstStageIndex;
+                
+                addLog('🎮 조건문 마스터 RPG 시작!', 'system');
+                addLog(`📚 총 ${stages.length}개의 문제가 준비되었습니다.`, 'info');
+                addLog('⚔️ 첫 번째 도전을 시작합니다!', 'info');
+                
+                // 초기 변수 설정 코드 로그
+                addCodeLog('# 게임 초기화');
+                addCodeLog(`player_hp = ${gameState.hp}`);
+                addCodeLog(`player_max_hp = ${gameState.maxHp}`);
+                addCodeLog(`player_level = ${gameState.level}`);
+                addCodeLog(`player_exp = ${gameState.exp}`);
+                addCodeLog(`player_gold = ${gameState.gold}`);
+                addCodeLog(`current_stage = ${firstStageIndex + 1}`);
+                
+                // 무기 상점 초기화
+                createWeaponShop();
+                
+                loadStage(firstStageIndex);
+                startAnimation(); // GIF 애니메이션 시작
+                createProgressIndicator();
+                
+                // 배경음악 재생
+                playBackgroundMusic();
+                
+            } catch (error) {
+                console.error('❌ startGame 실행 중 오류:', error);
+                // 오류가 발생해도 게임이 작동하므로 alert 제거
+            }
+        }
+
+        // 배열 섞기 함수 (Fisher-Yates shuffle)
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // 스테이지 로드
+        function loadStage(stageIndex) {
+            // 유효하지 않은 인덱스 체크
+            if (stageIndex < 0 || stageIndex >= stages.length) {
+                console.error('Invalid stage index:', stageIndex);
+                return;
+            }
+
+            const stage = stages[stageIndex];
+            gameState.currentStage = stageIndex;
+            
+            // 스테이지 로드 코드 로그
+            addCodeLog('# 새로운 스테이지 로드');
+            addCodeLog(`stage_number = ${gameState.usedStages.length}`);
+            addCodeLog(`stage_title = "${stage.title}"`);
+            addCodeLog(`stage_type = "${stage.type || 'quiz'}"`);
+
+            // 메시지 표시
+            document.getElementById('messageText').innerHTML = stage.message;
+
+            const choiceContainer = document.getElementById('choiceContainer');
+            choiceContainer.innerHTML = '';
+            choiceContainer.style.display = 'block'; // 선택지 컨테이너 표시
+
+            // 주관식 문제 처리
+            if (stage.type === 'input') {
+                // 메시지 박스 확장
+                const messageBox = document.getElementById('messageBox');
+                messageBox.style.height = '450px';
+                
+                // 입력란 컨테이너
+                const inputContainer = document.createElement('div');
+                inputContainer.className = 'subjective-container';
+                
+                // 입력 필드
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'subjectiveAnswer';
+                input.className = 'subjective-input';
+                input.placeholder = '정답을 입력하세요';
+                
+                // 제출 버튼
+                const submitBtn = document.createElement('button');
+                submitBtn.className = 'subjective-submit';
+                submitBtn.textContent = '✅ 제출하기';
+                submitBtn.onclick = () => {
+                    checkSubjectiveAnswer(stage);
+                    // 메시지 박스 크기 복원
+                    messageBox.style.height = '130px';
+                };
+                
+                // Enter 키로도 제출 가능
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        checkSubjectiveAnswer(stage);
+                        messageBox.style.height = '130px';
+                    }
+                });
+                
+                inputContainer.appendChild(input);
+                inputContainer.appendChild(submitBtn);
+                choiceContainer.appendChild(inputContainer);
+                
+                // 입력창에 포커스
+                setTimeout(() => input.focus(), 100);
+                
+            } else {
+                // 객관식 문제 처리
+                // 메시지 박스 크기 복원
+                const messageBox = document.getElementById('messageBox');
+                messageBox.style.height = '130px';
+                // 선택지를 랜덤하게 섞기
+                const shuffledChoices = shuffleArray(stage.choices);
+
+                // 선택지 생성
+                shuffledChoices.forEach((choice, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.innerHTML = `<span class="choice-number">${index + 1}</span><span style="flex: 1;">${choice.text}</span>`;
+                    btn.onclick = () => selectChoice(index, shuffledChoices);
+                    choiceContainer.appendChild(btn);
+                });
+            }
+
+            // 다음 버튼 숨기기
+            document.getElementById('nextBtn').classList.add('hidden');
+
+            // 씬 그리기 (애니메이션 이미 실행 중이면 자동 업데이트)
+            if (!animationFrameId) {
+                startAnimation();
+            }
+            updateProgressIndicator();
+        }
+
+        // 주관식 답안 체크
+        function checkSubjectiveAnswer(stage) {
+            const input = document.getElementById('subjectiveAnswer');
+            const userAnswer = input.value.trim();
+            
+            if (!userAnswer) {
+                addCodeLog('# 입력 체크');
+                addCodeLog(`user_input = "${userAnswer}"`);
+                addCodeLog(`if not user_input:`);
+                addCodeLog(`    print("답을 입력하세요!")`);
+                showMessage('❌ 답을 입력해주세요!', 'error');
+                return;
+            }
+            
+            // 정답 체크 (여러 형태의 답 허용)
+            const isCorrect = stage.acceptableAnswers.some(ans => 
+                userAnswer.toLowerCase() === ans.toLowerCase()
+            );
+            
+            addCodeLog('# 답안 검사');
+            addCodeLog(`user_answer = "${userAnswer}"`);
+            addCodeLog(`correct_answers = [${stage.acceptableAnswers.map(a => `"${a}"`).join(', ')}]`);
+            addCodeLog(`is_correct = user_answer in correct_answers  # ${isCorrect}`);
+            
+            if (isCorrect) {
+                // 정답 처리
+                input.disabled = true;
+                input.style.borderColor = '#48bb78';
+                input.style.background = 'rgba(72, 187, 120, 0.2)';
+                
+                showMessage(stage.explanation, 'success');
+                
+                // 플레이어 공격 애니메이션
+                playAttackAnimation();
+                
+                const oldExp = gameState.exp;
+                const oldGold = gameState.gold;
+                gameState.exp += stage.reward.exp;
+                gameState.gold += stage.reward.gold;
+                gameState.correctAnswers++;
+                
+                addCodeLog('# 정답 보상');
+                addCodeLog(`player_exp = ${oldExp} + ${stage.reward.exp}  # ${gameState.exp}`);
+                addCodeLog(`player_gold = ${oldGold} + ${stage.reward.gold}  # ${gameState.gold}`);
+                
+                updateStats();
+                checkLevelUp();
+                
+                setTimeout(() => {
+                    nextStage();
+                }, 3000);
+                
+            } else {
+                // 오답 처리
+                input.style.borderColor = '#ef4444';
+                input.style.background = 'rgba(239, 68, 68, 0.2)';
+                
+                showMessage(stage.wrongExplanation, 'error');
+                
+                // 몬스터 공격 애니메이션
+                playMonsterAttackAnimation();
+                monsterAttackAnimation.shake = 45;
+                
+                const oldHp = gameState.hp;
+                gameState.hp = Math.max(0, gameState.hp - 20);
+                
+                addCodeLog('# 오답 처리');
+                addCodeLog(`player_hp = ${oldHp} - 20  # ${gameState.hp}`);
+                addCodeLog(`if player_hp <= 0:`);
+                addCodeLog(`    game_over = True`);
+                
+                updateStats();
+                
+                // 체력이 0이 되면 게임 오버
+                if (gameState.hp <= 0) {
+                    setTimeout(() => {
+                        showGameOver();
+                    }, 2000);
+                    return;
+                }
+                
+                // 다시 시도 가능하도록
+                setTimeout(() => {
+                    input.value = '';
+                    input.style.borderColor = '#4a5568';
+                    input.style.background = '#1a202c';
+                    input.disabled = false;
+                    input.focus();
+                }, 1500);
+            }
+        }
+
+        // 선택지 선택
+        function selectChoice(choiceIndex, shuffledChoices) {
+            const choice = shuffledChoices[choiceIndex];
+            const buttons = document.querySelectorAll('.choice-btn');
+
+            // 모든 버튼 비활성화
+            buttons.forEach(btn => btn.classList.add('disabled'));
+
+            if (choice.correct) {
+                // 정답
+                buttons[choiceIndex].classList.add('correct');
+                showMessage(choice.explanation, 'success');
+                
+                // 타격 애니메이션 및 화면 진동
+                playAttackAnimation();
+                attackAnimation.shake = attackAnimation.isCritical ? 40 : 20; // 크리티컬은 진동 2배
+                
+                // 데미지 계산 로그
+                const damageAmount = attackAnimation.isCritical ? 300 : (Math.random() * 40 + 70);
+                addCodeLog('# 플레이어 공격');
+                addCodeLog(`is_critical = ${attackAnimation.isCritical}`);
+                addCodeLog(`if is_critical:`);
+                addCodeLog(`    damage = 300`);
+                addCodeLog(`else:`);
+                addCodeLog(`    damage = random.randint(70, 110)`);
+                addCodeLog(`monster_hp -= damage`);
+                
+                // 보상 지급 (현재 스테이지에서 가져오기)
+                const stage = stages[gameState.currentStage];
+                const oldExp = gameState.exp;
+                const oldGold = gameState.gold;
+                gameState.exp += stage.reward.exp;
+                gameState.gold += stage.reward.gold;
+                gameState.correctAnswers++;
+                
+                // 보상 획득 코드 로그
+                addCodeLog('# 보상 획득');
+                addCodeLog(`player_exp = ${oldExp} + ${stage.reward.exp}  # ${gameState.exp}`);
+                addCodeLog(`player_gold = ${oldGold} + ${stage.reward.gold}  # ${gameState.gold}`);
+                addCodeLog(`correct_answers += 1  # ${gameState.correctAnswers}`);
+                
+                addLog(`✅ 정답! 보상: EXP +${stage.reward.exp}, Gold +${stage.reward.gold}`, 'success');
+                
+                // 레벨업 체크
+                checkLevelUp();
+                
+                // 3초 후 자동으로 다음 스테이지로
+                setTimeout(() => {
+                    // 애니메이션 강제 종료 및 위치 초기화
+                    attackAnimation.active = false;
+                    attackAnimation.frame = 0;
+                    console.log('🔄 다음 스테이지 전환 - 애니메이션 초기화');
+                    nextStage();
+                }, 3000);
+                
+            } else {
+                // 오답
+                buttons[choiceIndex].classList.add('wrong');
+                showMessage(choice.explanation, 'error');
+                
+                // 몬스터 공격 애니메이션 및 화면 진동
+                playMonsterAttackAnimation();
+                monsterAttackAnimation.shake = 45; // 진동 강도 대폭 증가
+                
+                const oldHp = gameState.hp;
+                gameState.hp = Math.max(0, gameState.hp - 20);
+                
+                // 데미지 받는 코드 로그
+                addCodeLog('# 몬스터 공격');
+                addCodeLog(`monster_damage = 20`);
+                addCodeLog(`player_hp = ${oldHp} - monster_damage  # ${gameState.hp}`);
+                addCodeLog(`if player_hp <= 0:`);
+                addCodeLog(`    game_over = True`);
+                
+                updateStats(); // 체력을 0으로 표시
+                
+                addLog(`❌ 오답! 데미지 -20HP (남은 HP: ${gameState.hp}/${gameState.maxHp})`, 'error');
+                
+                // 체력이 0이 되면 게임 오버
+                if (gameState.hp <= 0) {
+                    addLog('💀 체력이 모두 소진되었습니다. 게임 오버!', 'error');
+                    setTimeout(() => {
+                        showGameOver();
+                    }, 2000);
+                    return;
+                }
+                
+                // 다시 시도 가능하도록
+                setTimeout(() => {
+                    buttons.forEach(btn => {
+                        if (!btn.classList.contains('wrong')) {
+                            btn.classList.remove('disabled');
+                        }
+                    });
+                }, 1500);
+            }
+
+            updateStats();
+        }
+
+        // 다음 스테이지
+        function nextStage() {
+            // 남은 스테이지 찾기
+            const availableStages = [];
+            for (let i = 0; i < stages.length; i++) {
+                if (!gameState.usedStages.includes(i)) {
+                    availableStages.push(i);
+                }
+            }
+            
+            // 모든 문제를 풀었다면 게임 종료
+            if (availableStages.length === 0) {
+                addCodeLog('# 게임 완료!');
+                addCodeLog(`if len(remaining_stages) == 0:`);
+                addCodeLog(`    print("모든 스테이지 클리어!")`);
+                addCodeLog(`    show_victory_screen()`);
+                showVictoryScreen();
+                return;
+            }
+            
+            // 남은 문제 중 랜덤으로 선택
+            const randomIndex = Math.floor(Math.random() * availableStages.length);
+            const nextStageIndex = availableStages[randomIndex];
+            
+            addCodeLog('# 다음 스테이지 선택');
+            addCodeLog(`remaining_stages = [${availableStages.slice(0, 5).join(', ')}${availableStages.length > 5 ? '...' : ''}]`);
+            addCodeLog(`next_stage = random.choice(remaining_stages)  # ${nextStageIndex + 1}`);
+            addCodeLog(`current_stage = next_stage`);
+            
+            gameState.usedStages.push(nextStageIndex);
+            gameState.currentStage = nextStageIndex;
+            loadStage(nextStageIndex);
+        }
+
+        // 레벨업 체크
+        function checkLevelUp() {
+            while (gameState.exp >= gameState.maxExp) {
+                const oldLevel = gameState.level;
+                const oldMaxExp = gameState.maxExp;
+                const oldExp = gameState.exp;
+                
+                gameState.level++;
+                gameState.exp -= gameState.maxExp;
+                gameState.maxExp = Math.floor(gameState.maxExp * 1.5);
+                // 최대 체력은 100으로 고정
+                gameState.maxHp = 100;
+                gameState.hp = gameState.maxHp;
+                
+                // 레벨업 코드 로그
+                addCodeLog('# 레벨업 달성!');
+                addCodeLog(`if player_exp >= max_exp:  # ${oldExp} >= ${oldMaxExp}`);
+                addCodeLog(`    player_level = ${oldLevel} + 1  # ${gameState.level}`);
+                addCodeLog(`    player_exp = ${oldExp} - ${oldMaxExp}  # ${gameState.exp}`);
+                addCodeLog(`    max_exp = int(max_exp * 1.5)  # ${gameState.maxExp}`);
+                addCodeLog(`    player_hp = max_hp  # 완전 회복`);
+                
+                addLog(`🎉 레벨 업! Lv.${gameState.level} 달성! HP 완전 회복!`, 'system');
+                
+                playLevelUpSound(); // 레벨업 사운드
+                showLevelUpEffect();
+                showAchievement(`🎉 레벨 ${gameState.level}!`);
+            }
+        }
+
+        // 스탯 업데이트
+        function updateStats() {
+            document.getElementById('hpValue').textContent = `${gameState.hp}/${gameState.maxHp}`;
+            document.getElementById('hpFill').style.width = `${(gameState.hp / gameState.maxHp) * 100}%`;
+            
+            document.getElementById('levelValue').textContent = gameState.level;
+            document.getElementById('expFill').style.width = `${(gameState.exp / gameState.maxExp) * 100}%`;
+            
+            document.getElementById('goldValue').textContent = gameState.gold;
+            
+            // 현재 무기 표시 업데이트
+            document.getElementById('currentWeapon').textContent = weapons[gameState.weapon].name;
+            
+            // 무기 상점 업데이트
+            updateWeaponShop();
+        }
+
+        // 무기 상점 UI 생성
+        function createWeaponShop() {
+            const shopContainer = document.getElementById('weaponShop');
+            shopContainer.innerHTML = '';
+            
+            for (let i = 1; i < weapons.length; i++) {
+                const weapon = weapons[i];
+                const isOwned = gameState.weapon >= i;
+                const canAfford = gameState.gold >= weapon.cost;
+                
+                const weaponBtn = document.createElement('button');
+                weaponBtn.style.cssText = `
+                    width: 100%;
+                    padding: 7px;
+                    margin: 3px 0;
+                    font-size: 10.5px;
+                    background: ${isOwned ? 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)' : 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)'};
+                    color: white;
+                    border: 1.5px solid ${isOwned ? '#68d391' : canAfford ? '#ffd700' : '#718096'};
+                    border-radius: 5px;
+                    cursor: ${isOwned ? 'default' : canAfford ? 'pointer' : 'not-allowed'};
+                    transition: all 0.3s ease;
+                    opacity: ${isOwned ? '0.7' : '1'};
+                `;
+                
+                const stars = '⭐'.repeat(i);
+                weaponBtn.innerHTML = `${stars} ${weapon.name}<br><span style="font-size: 9.5px;">${isOwned ? '✅ 보유중' : `${weapon.cost}G`}</span>`;
+                
+                if (!isOwned && canAfford) {
+                    weaponBtn.onclick = () => buyWeapon(i);
+                    weaponBtn.onmouseover = () => {
+                        weaponBtn.style.transform = 'translateY(-2px)';
+                        weaponBtn.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.4)';
+                    };
+                    weaponBtn.onmouseout = () => {
+                        weaponBtn.style.transform = 'translateY(0)';
+                        weaponBtn.style.boxShadow = 'none';
+                    };
+                }
+                
+                shopContainer.appendChild(weaponBtn);
+            }
+        }
+
+        // 무기 상점 업데이트
+        function updateWeaponShop() {
+            createWeaponShop();
+        }
+
+        // 무기 구매
+        function buyWeapon(weaponIndex) {
+            const weapon = weapons[weaponIndex];
+            
+            // 이미 보유중인 무기인지 체크
+            if (gameState.weapon >= weaponIndex) {
+                showMessage('⚠️ 이미 보유중인 무기입니다!', 'error');
+                return;
+            }
+            
+            // 골드 부족 체크
+            if (gameState.gold < weapon.cost) {
+                addCodeLog('# 무기 구매 시도');
+                addCodeLog(`weapon_cost = ${weapon.cost}`);
+                addCodeLog(`if player_gold < weapon_cost:  # ${gameState.gold} < ${weapon.cost}`);
+                addCodeLog(`    print("골드 부족!")`);
+                showMessage(`❌ 골드가 부족합니다! (필요: ${weapon.cost}G)`, 'error');
+                return;
+            }
+            
+            // 무기 구매
+            const oldGold = gameState.gold;
+            gameState.gold -= weapon.cost;
+            gameState.weapon = weaponIndex;
+            
+            // 무기 구매 코드 로그
+            addCodeLog('# 무기 구매');
+            addCodeLog(`weapon_name = "${weapon.name}"`);
+            addCodeLog(`weapon_cost = ${weapon.cost}`);
+            addCodeLog(`player_gold = ${oldGold} - weapon_cost  # ${gameState.gold}`);
+            addCodeLog(`player_weapon = ${weaponIndex}  # 무기 레벨`);
+            addCodeLog(`weapon_effect = ${weapon.effect}  # 임팩트 강도`);
+            
+            updateStats();
+            showMessage(`✅ ${weapon.name}을(를) 구매했습니다! (-${weapon.cost}G)`, 'success');
+            addLog(`⚔️ 무기 구매! ${weapon.name} (${weapon.cost}G 소비)`, 'success');
+            
+            playWeaponBuySound(); // 무기 구매 사운드
+            
+            // 구매 이펙트
+            showAchievement(`⚔️ ${weapon.name}!`);
+        }
+
+        // 포션 구매 기능
+        function buyPotion() {
+            const potionCost = 250;
+            const healAmount = 20;
+            
+            // 골드 부족 체크
+            if (gameState.gold < potionCost) {
+                addCodeLog('# 포션 구매 시도');
+                addCodeLog(`potion_cost = ${potionCost}`);
+                addCodeLog(`if player_gold < potion_cost:  # ${gameState.gold} < ${potionCost}`);
+                addCodeLog(`    print("골드 부족!")`);
+                showMessage('❌ 골드가 부족합니다! (필요: 250G)', 'error');
+                return;
+            }
+            
+            // 체력이 이미 최대치인 경우
+            if (gameState.hp >= gameState.maxHp) {
+                addCodeLog('# 포션 사용 체크');
+                addCodeLog(`if player_hp >= max_hp:  # ${gameState.hp} >= ${gameState.maxHp}`);
+                addCodeLog(`    print("체력이 이미 최대!")`);
+                showMessage('⚠️ 체력이 이미 최대치입니다!', 'error');
+                return;
+            }
+            
+            // 포션 구매 및 사용
+            const oldGold = gameState.gold;
+            gameState.gold -= potionCost;
+            const oldHp = gameState.hp;
+            gameState.hp = Math.min(gameState.maxHp, gameState.hp + healAmount);
+            const actualHeal = gameState.hp - oldHp;
+            
+            // 포션 사용 코드 로그
+            addCodeLog('# 포션 구매 및 사용');
+            addCodeLog(`player_gold = ${oldGold} - ${potionCost}  # ${gameState.gold}`);
+            addCodeLog(`heal_amount = ${healAmount}`);
+            addCodeLog(`player_hp = min(max_hp, ${oldHp} + heal_amount)  # ${gameState.hp}`);
+            addCodeLog(`actual_heal = ${actualHeal}`);
+            
+            // 녹색 회복 이펙트
+            const hpBar = document.getElementById('hpFill');
+            hpBar.style.boxShadow = '0 0 20px rgba(72, 187, 120, 1)';
+            setTimeout(() => {
+                hpBar.style.boxShadow = '0 0 10px rgba(72, 187, 120, 0.5)';
+            }, 500);
+            
+            updateStats();
+            showMessage(`✅ 포션을 사용했습니다! 체력 +${actualHeal}HP 회복! (-250G)`, 'success');
+            
+            playPotionSound(); // 물약 사운드
+            addLog(`🧪 포션 구매! HP +${actualHeal} (250G 소비)`, 'success');
+            
+            // 회복 이펙트 표시
+            showAchievement(`🧪 +${actualHeal}HP`);
+        }
+
+        // ============== 사운드 시스템 ==============
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = false;
+        let backgroundMusicNodes = null;
+
+        // 배경음악 재생
+        function playBackgroundMusic() {
+            if (isMuted || backgroundMusicNodes) return;
+            
+            try {
+                const notes = [
+                    {freq: 262, duration: 0.5}, // C4
+                    {freq: 294, duration: 0.5}, // D4
+                    {freq: 330, duration: 0.5}, // E4
+                    {freq: 349, duration: 0.5}, // F4
+                    {freq: 392, duration: 0.5}, // G4
+                    {freq: 349, duration: 0.5}, // F4
+                    {freq: 330, duration: 0.5}, // E4
+                    {freq: 294, duration: 0.5}  // D4
+                ];
+                
+                let currentTime = audioContext.currentTime;
+                const oscillators = [];
+                
+                function playLoop() {
+                    if (isMuted || !backgroundMusicNodes) return;
+                    
+                    notes.forEach((note, index) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.frequency.value = note.freq;
+                        osc.type = 'sine';
+                        
+                        gain.gain.setValueAtTime(0, currentTime + index * note.duration);
+                        gain.gain.linearRampToValueAtTime(0.25, currentTime + index * note.duration + 0.05);
+                        gain.gain.linearRampToValueAtTime(0.18, currentTime + index * note.duration + note.duration - 0.05);
+                        gain.gain.linearRampToValueAtTime(0, currentTime + index * note.duration + note.duration);
+                        
+                        osc.start(currentTime + index * note.duration);
+                        osc.stop(currentTime + (index + 1) * note.duration);
+                        
+                        oscillators.push(osc);
+                    });
+                    
+                    const loopDuration = notes.reduce((sum, note) => sum + note.duration, 0);
+                    currentTime += loopDuration;
+                    
+                    setTimeout(() => {
+                        if (backgroundMusicNodes) playLoop();
+                    }, loopDuration * 1000);
+                }
+                
+                backgroundMusicNodes = { oscillators };
+                playLoop();
+                console.log('🎵 배경음악 시작');
+            } catch(e) {
+                console.log('배경음악 재생 오류:', e);
+            }
+        }
+
+        // 배경음악 정지
+        function stopBackgroundMusic() {
+            if (backgroundMusicNodes) {
+                backgroundMusicNodes = null;
+                console.log('🎵 배경음악 정지');
+            }
+        }
+
+        function playAttackSound(weaponLevel) {
+            if (isMuted) return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                const freqs = [400, 500, 600, 700, 800, 900];
+                osc.frequency.value = freqs[weaponLevel] || 400;
+                osc.type = 'square';
+                gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        function playCriticalSound() {
+            if (isMuted) return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(800, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+                osc.type = 'sawtooth';
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.1);
+            } catch(e) {}
+        }
+
+        function playMonsterAttackSound() {
+            if (isMuted) return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(200, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.2);
+                osc.type = 'sawtooth';
+                gain.gain.setValueAtTime(0.25, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.2);
+            } catch(e) {}
+        }
+
+        function playLevelUpSound() {
+            if (isMuted) return;
+            try {
+                [523, 659, 784].forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.frequency.value = freq;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                        osc.start();
+                        osc.stop(audioContext.currentTime + 0.2);
+                    }, i * 80);
+                });
+            } catch(e) {}
+        }
+
+        function playPotionSound() {
+            if (isMuted) return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.08);
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        function playWeaponBuySound() {
+            if (isMuted) return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(440, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.15);
+                osc.type = 'triangle';
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.2);
+            } catch(e) {}
+        }
+
+        function playGameOverSound() {
+            if (isMuted) return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(440, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.8);
+                osc.type = 'sawtooth';
+                gain.gain.setValueAtTime(0.25, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.8);
+            } catch(e) {}
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            if (btn) {
+                btn.textContent = isMuted ? '🔇' : '🔊';
+            }
+            
+            if (isMuted) {
+                stopBackgroundMusic();
+            } else {
+                playBackgroundMusic();
+            }
+            
+            console.log(isMuted ? '🔇 음소거' : '🔊 음소거 해제');
+            return isMuted;
+        }
+
+        // 포션 구매 기능
+        function buyPotion() {
+            const potionCost = 250;
+            const healAmount = 20;
+            
+            // 골드 부족 체크
+            if (gameState.gold < potionCost) {
+                showMessage('❌ 골드가 부족합니다! (필요: 250G)', 'error');
+                return;
+            }
+            
+            // 체력이 이미 최대치인 경우
+            if (gameState.hp >= gameState.maxHp) {
+                showMessage('⚠️ 체력이 이미 최대치입니다!', 'error');
+                return;
+            }
+            
+            // 포션 구매 및 사용
+            gameState.gold -= potionCost;
+            const oldHp = gameState.hp;
+            gameState.hp = Math.min(gameState.maxHp, gameState.hp + healAmount);
+            const actualHeal = gameState.hp - oldHp;
+            
+            // 횟색 회복 이펝트
+            const hpBar = document.getElementById('hpFill');
+            hpBar.style.boxShadow = '0 0 20px rgba(72, 187, 120, 1)';
+            setTimeout(() => {
+                hpBar.style.boxShadow = '0 0 10px rgba(72, 187, 120, 0.5)';
+            }, 500);
+            
+            updateStats();
+            showMessage(`✅ 포션을 사용했습니다! 체력 +${actualHeal}HP 회복! (-250G)`, 'success');
+            
+            // 회복 이펝트 표시
+            showAchievement(`🧪 +${actualHeal}HP`);
+        }
+
+        // 애니메이션 상태 및 위치 변수 (전역)
+        let playerX = 250;
+        let monsterX = 950;
+        let playerY = 230;
+        let monsterY = 40;
+        
+        let attackAnimation = {
+            active: false,
+            frame: 0,
+            maxFrames: 120,
+            shake: 0,
+            damage: 0,
+            isCritical: false
+        };
+        
+        console.log('🎮 게임 초기화: attackAnimation 생성, playerX=250, monsterX=950');
+
+        let monsterAttackAnimation = {
+            active: false,
+            frame: 0,
+            maxFrames: 120,
+            shake: 0
+        };
+
+        // 타격 애니메이션 시작
+        function playAttackAnimation() {
+            console.log('⚔️ 플레이어 공격 애니메이션 시작');
+            attackAnimation.active = true;
+            attackAnimation.frame = 0;
+            
+            // 랜덤 데미지 결정
+            const criticalChance = Math.random();
+            if (criticalChance < 0.05) { // 5% 확률로 크리티컬
+                attackAnimation.damage = 300;
+                attackAnimation.isCritical = true;
+                playCriticalSound(); // 크리티컬 사운드
+            } else {
+                const damages = [70, 90, 110];
+                attackAnimation.damage = damages[Math.floor(Math.random() * damages.length)];
+                attackAnimation.isCritical = false;
+                playAttackSound(gameState.weapon); // 무기별 사운드
+            }
+        }
+
+        // 몬스터 공격 애니메이션 시작
+        function playMonsterAttackAnimation() {
+            monsterAttackAnimation.active = true;
+            monsterAttackAnimation.frame = 0;
+            playMonsterAttackSound(); // 몬스터 공격 사운드
+        }
+
+        // 씬 그리기
+        function drawScene() {
+            const stage = stages[gameState.currentStage];
+            const colors = sceneColors[stage.scene];
+            
+            // 화면 진동 효과
+            let shakeX = 0;
+            let shakeY = 0;
+            if (attackAnimation.shake > 0) {
+                shakeX = (Math.random() - 0.5) * attackAnimation.shake;
+                shakeY = (Math.random() - 0.5) * attackAnimation.shake;
+                attackAnimation.shake *= 0.9; // 진동 감쇠
+                if (attackAnimation.shake < 0.5) attackAnimation.shake = 0;
+            }
+            if (monsterAttackAnimation.shake > 0) {
+                shakeX = (Math.random() - 0.5) * monsterAttackAnimation.shake;
+                shakeY = (Math.random() - 0.5) * monsterAttackAnimation.shake;
+                monsterAttackAnimation.shake *= 0.9;
+                if (monsterAttackAnimation.shake < 0.5) monsterAttackAnimation.shake = 0;
+            }
+            
+            // 캔버스 완전히 지우기
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 캔버스 이동 (진동 효과)
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
+            
+            // 배경 이미지 그리기 (스테이지 진행도에 따라)
+            const currentStageNumber = gameState.usedStages.length + 1;
+            const backgroundPath = getBackgroundImage(currentStageNumber);
+            const backgroundImg = imageCache[backgroundPath];
+            
+            if (backgroundImg && backgroundImg.complete) {
+                // 배경 이미지를 캔버스 크기에 맞게 그리기
+                ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                // 배경 이미지가 없으면 기존 그라데이션 사용
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, colors.bg);
+                gradient.addColorStop(1, colors.fg);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // 타격 애니메이션 처리
+            let showHitEffect = false;
+            let showMonsterHitEffect = false;
+            
+            if (attackAnimation.active) {
+                const progress = attackAnimation.frame / attackAnimation.maxFrames;
+                
+                if (progress < 0.3) {
+                    // 플레이어 돌진 (0~30%)
+                    playerX = 250 + (700 * (progress / 0.3));
+                } else if (progress < 0.5) {
+                    // 타격 순간 (30~50%)
+                    playerX = 950;
+                    showHitEffect = true;
+                    // 몬스터 밀림
+                    monsterX = 950 + ((progress - 0.3) / 0.2) * 100;
+                } else {
+                    // 플레이어 복귀 (50~100%)
+                    const returnProgress = (progress - 0.5) / 0.5;
+                    playerX = 950 - (700 * returnProgress);
+                    // 마지막 프레임에서 정확히 250으로
+                    if (attackAnimation.frame >= attackAnimation.maxFrames - 1) {
+                        playerX = 250;
+                    }
+                }
+                
+                // 매 10프레임마다 위치 출력
+                if (attackAnimation.frame % 10 === 0) {
+                    console.log(`🎯 Frame ${attackAnimation.frame}/${attackAnimation.maxFrames}: progress=${progress.toFixed(2)}, playerX=${Math.round(playerX)}`);
+                }
+                
+                attackAnimation.frame++;
+                if (attackAnimation.frame >= attackAnimation.maxFrames) {
+                    console.log(`✅ 플레이어 공격 애니메이션 종료 - active: false, frame: 0, 최종 playerX: ${Math.round(playerX)}`);
+                    attackAnimation.active = false;
+                    attackAnimation.frame = 0;
+                }
+            } else {
+                // 애니메이션이 비활성화 상태일 때는 항상 250
+                if (playerX !== 250) {
+                    console.log(`⚠️ 경고: 애니메이션 비활성 상태인데 playerX=${playerX}, 250으로 강제 리셋`);
+                    playerX = 250;
+                }
+            }
+            
+            // 몬스터 공격 애니메이션 처리
+            if (monsterAttackAnimation.active) {
+                const progress = monsterAttackAnimation.frame / monsterAttackAnimation.maxFrames;
+                
+                if (progress < 0.3) {
+                    // 몬스터 돌진 (0~30%)
+                    monsterX = 950 - (700 * (progress / 0.3));
+                } else if (progress < 0.5) {
+                    // 타격 순간 (30~50%)
+                    monsterX = 250;
+                    showMonsterHitEffect = true;
+                    // 플레이어 밀림
+                    playerX = 250 - ((progress - 0.3) / 0.2) * 100;
+                } else {
+                    // 몬스터 복귀 (50~100%)
+                    const returnProgress = (progress - 0.5) / 0.5;
+                    monsterX = 250 + (700 * returnProgress);
+                    // 마지막 프레임에서 정확히 950으로
+                    if (monsterAttackAnimation.frame >= monsterAttackAnimation.maxFrames - 1) {
+                        monsterX = 950;
+                    }
+                }
+                
+                monsterAttackAnimation.frame++;
+                if (monsterAttackAnimation.frame >= monsterAttackAnimation.maxFrames) {
+                    monsterAttackAnimation.active = false;
+                    monsterAttackAnimation.frame = 0;
+                }
+            }
+            
+            // 플레이어 (왼쪽)
+            drawPixelCharacter('player', playerX, playerY, 3);
+            
+            // NPC/적 (오른쪽) - 몬스터는 2배 크게, 위로 배치
+            if (showHitEffect) {
+                // 타격 진행도 계산 (모든 이펙트에서 공통 사용)
+                const hitProgress = (attackAnimation.frame - 6) / 4;
+                
+                // 타격 시 몬스터 깜빡임
+                if (Math.floor(attackAnimation.frame / 2) % 2 === 0) {
+                    drawPixelCharacter(stage.character, monsterX, monsterY, 6);
+                }
+                
+                if (attackAnimation.isCritical) {
+                    // 크리티컬 타격 이펙트 (화려함)
+                    
+                    // 여러 개의 확장하는 충격파
+                    for (let i = 0; i < 3; i++) {
+                        const waveSize = 80 + hitProgress * 50 + i * 60;
+                        ctx.strokeStyle = i % 2 === 0 ? '#ff0000' : '#ffff00';
+                        ctx.lineWidth = 8 - i * 2;
+                        ctx.globalAlpha = 0.8 - hitProgress * 0.2 - i * 0.2;
+                        ctx.beginPath();
+                        ctx.arc(monsterX + 100, monsterY + 200, waveSize, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1;
+                    
+                    // 번쩍이는 섬광 (크리티컬)
+                    ctx.fillStyle = '#ffffff';
+                    ctx.globalAlpha = 0.9 - hitProgress * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(monsterX + 100, monsterY + 200, 120, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    
+                    // 빨간색 중심 폭발
+                    const gradient = ctx.createRadialGradient(
+                        monsterX + 100, monsterY + 200, 0,
+                        monsterX + 100, monsterY + 200, 150
+                    );
+                    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.9)');
+                    gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.6)');
+                    gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.globalAlpha = 0.8;
+                    ctx.beginPath();
+                    ctx.arc(monsterX + 100, monsterY + 200, 100 + hitProgress * 30, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    
+                    // 빛나는 별 파티클
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const distance = 80 + hitProgress * 40;
+                        const starX = monsterX + 100 + Math.cos(angle) * distance;
+                        const starY = monsterY + 200 + Math.sin(angle) * distance;
+                        
+                        ctx.fillStyle = '#ffff00';
+                        ctx.globalAlpha = 1 - hitProgress * 0.5;
+                        ctx.beginPath();
+                        ctx.arc(starX, starY, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                    
+                } else {
+                    // 일반 타격 이펙트 - 무기 레벨에 따라 강화
+                    const weaponLevel = gameState.weapon;
+                    const effectX = monsterX + 100;
+                    const effectY = monsterY + 200;
+                    const baseSize = 40 + weaponLevel * 10;
+                    const particleCount = 8 + weaponLevel * 2;
+                    const waveCount = 1 + Math.floor(weaponLevel / 2);
+                    
+                    // 무기별 색상 설정
+                    const weaponColors = [
+                        ['#ffffff', '#cccccc'], // 0: 맨주먹
+                        ['#4fc3f7', '#29b6f6'], // 1: 평범한 영웅의 검
+                        ['#9c27b0', '#e1bee7'], // 2: 비범한 천사의 검
+                        ['#ff4081', '#f48fb1'], // 3: 사악한 큐피트의 케이크검
+                        ['#ff9800', '#ffb74d'], // 4: 귀찮은 드래곤의 검
+                        ['#ffd700', '#ffeb3b']  // 5: 무명 기사의 에고 소드
+                    ];
+                    const colors = weaponColors[Math.min(weaponLevel, 5)];
+                    
+                    // 영롱한 검의 오라 - 확장하는 빛의 파동
+                    for (let i = 0; i < waveCount; i++) {
+                        const waveSize = baseSize + hitProgress * (60 + weaponLevel * 10) + i * 40;
+                        const gradient = ctx.createRadialGradient(
+                            effectX, effectY, 0,
+                            effectX, effectY, waveSize
+                        );
+                        gradient.addColorStop(0, colors[0] + 'dd');
+                        gradient.addColorStop(0.5, colors[1] + '88');
+                        gradient.addColorStop(1, colors[0] + '00');
+                        ctx.fillStyle = gradient;
+                        ctx.globalAlpha = 0.6 - hitProgress * 0.3 - i * 0.1;
+                        ctx.beginPath();
+                        ctx.arc(effectX, effectY, waveSize, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                    
+                    // 검의 궤적을 표현하는 빛나는 선
+                    if (weaponLevel >= 2) {
+                        for (let i = 0; i < 3; i++) {
+                            const angle = (i / 3) * Math.PI * 2 + attackAnimation.frame * 0.1;
+                            const length = 60 + weaponLevel * 8;
+                            ctx.strokeStyle = colors[i % 2];
+                            ctx.lineWidth = 3 + weaponLevel;
+                            ctx.globalAlpha = 0.7 - hitProgress * 0.4;
+                            ctx.beginPath();
+                            ctx.moveTo(effectX, effectY);
+                            ctx.lineTo(
+                                effectX + Math.cos(angle) * length,
+                                effectY + Math.sin(angle) * length
+                            );
+                            ctx.stroke();
+                        }
+                        ctx.globalAlpha = 1;
+                    }
+                    
+                    // 빛나는 파티클 (무기 레벨에 따라 개수 증가)
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = (i / particleCount) * Math.PI * 2 + attackAnimation.frame * 0.05;
+                        const distance = 50 + hitProgress * (30 + weaponLevel * 5);
+                        const particleX = effectX + Math.cos(angle) * distance;
+                        const particleY = effectY + Math.sin(angle) * distance;
+                        
+                        ctx.fillStyle = i % 2 === 0 ? colors[0] : colors[1];
+                        ctx.globalAlpha = 0.9 - hitProgress * 0.5;
+                        ctx.beginPath();
+                        ctx.arc(particleX, particleY, 3 + weaponLevel * 0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                    
+                    // 중심 섬광 (무기 레벨이 높을수록 강렬)
+                    if (weaponLevel >= 1) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.globalAlpha = (0.4 + weaponLevel * 0.1) - hitProgress * 0.3;
+                        ctx.beginPath();
+                        ctx.arc(effectX, effectY, 30 + weaponLevel * 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+                    
+                    // 영롱한 별 효과 (고급 무기)
+                    if (weaponLevel >= 3) {
+                        for (let i = 0; i < 6; i++) {
+                            const angle = (i / 6) * Math.PI * 2 - attackAnimation.frame * 0.08;
+                            const distance = 70 + Math.sin(attackAnimation.frame * 0.2 + i) * 15;
+                            const starX = effectX + Math.cos(angle) * distance;
+                            const starY = effectY + Math.sin(angle) * distance;
+                            
+                            // 십자 별 모양
+                            ctx.strokeStyle = colors[i % 2];
+                            ctx.lineWidth = 2;
+                            ctx.globalAlpha = 0.8 - hitProgress * 0.4;
+                            ctx.beginPath();
+                            ctx.moveTo(starX - 8, starY);
+                            ctx.lineTo(starX + 8, starY);
+                            ctx.moveTo(starX, starY - 8);
+                            ctx.lineTo(starX, starY + 8);
+                            ctx.stroke();
+                        }
+                        ctx.globalAlpha = 1;
+                    }
+                    
+                    // 최상위 무기: 영롱한 오라의 흐름
+                    if (weaponLevel >= 4) {
+                        for (let i = 0; i < 12; i++) {
+                            const angle = (i / 12) * Math.PI * 2 + attackAnimation.frame * 0.15;
+                            const distance = 40 + Math.sin(attackAnimation.frame * 0.1 + i * 0.5) * 20;
+                            const particleX = effectX + Math.cos(angle) * distance;
+                            const particleY = effectY + Math.sin(angle) * distance;
+                            
+                            const gradient = ctx.createRadialGradient(
+                                particleX, particleY, 0,
+                                particleX, particleY, 10
+                            );
+                            gradient.addColorStop(0, '#fff');
+                            gradient.addColorStop(1, colors[i % 2] + '00');
+                            ctx.fillStyle = gradient;
+                            ctx.globalAlpha = 0.7 - hitProgress * 0.3;
+                            ctx.beginPath();
+                            ctx.arc(particleX, particleY, 10, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        ctx.globalAlpha = 1;
+                    }
+                }
+            } else {
+                drawPixelCharacter(stage.character, monsterX, monsterY, 6);
+            }
+            
+            // 몬스터 공격 이펙트
+            if (showMonsterHitEffect) {
+                // 타격 시 플레이어 깜빡임
+                if (Math.floor(monsterAttackAnimation.frame / 2) % 2 === 0) {
+                    drawPixelCharacter('player', playerX, playerY, 3);
+                }
+                
+                const hitProgress = (monsterAttackAnimation.frame - 6) / 4;
+                
+                // 여러 개의 확장하는 충격파 (보라색/빨강)
+                for (let i = 0; i < 4; i++) {
+                    const waveSize = 60 + hitProgress * 40 + i * 50;
+                    ctx.strokeStyle = i % 2 === 0 ? '#8b00ff' : '#ff00ff';
+                    ctx.lineWidth = 10 - i * 2;
+                    ctx.globalAlpha = 0.9 - hitProgress * 0.2 - i * 0.15;
+                    ctx.beginPath();
+                    ctx.arc(playerX + 50, playerY + 100, waveSize, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+                
+                // 어두운 폭발 효과 (그라데이션)
+                const darkGradient = ctx.createRadialGradient(
+                    playerX + 50, playerY + 100, 0,
+                    playerX + 50, playerY + 100, 140
+                );
+                darkGradient.addColorStop(0, 'rgba(139, 0, 255, 0.9)');
+                darkGradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.7)');
+                darkGradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
+                ctx.fillStyle = darkGradient;
+                ctx.globalAlpha = 0.8;
+                ctx.beginPath();
+                ctx.arc(playerX + 50, playerY + 100, 100 + hitProgress * 25, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                
+                // 보라색 번개 효과
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.globalAlpha = 0.8;
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 + hitProgress * Math.PI;
+                    const length = 70 + Math.random() * 30;
+                    ctx.beginPath();
+                    ctx.moveTo(playerX + 50, playerY + 100);
+                    
+                    // 번개처럼 지그재그
+                    const segments = 4;
+                    let currentX = playerX + 50;
+                    let currentY = playerY + 100;
+                    for (let j = 0; j < segments; j++) {
+                        const segmentLength = length / segments;
+                        const targetX = currentX + Math.cos(angle) * segmentLength + (Math.random() - 0.5) * 20;
+                        const targetY = currentY + Math.sin(angle) * segmentLength + (Math.random() - 0.5) * 20;
+                        ctx.lineTo(targetX, targetY);
+                        currentX = targetX;
+                        currentY = targetY;
+                    }
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+                
+                // 중심 강한 섬광
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.7 - hitProgress * 0.3;
+                ctx.beginPath();
+                ctx.arc(playerX + 50, playerY + 100, 40, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                
+                // 회전하는 보라색 파티클
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2 + monsterAttackAnimation.frame * 0.1;
+                    const distance = 60 + hitProgress * 30;
+                    const particleX = playerX + 50 + Math.cos(angle) * distance;
+                    const particleY = playerY + 100 + Math.sin(angle) * distance;
+                    
+                    ctx.fillStyle = i % 2 === 0 ? '#8b00ff' : '#ff00ff';
+                    ctx.globalAlpha = 0.9 - hitProgress * 0.4;
+                    ctx.beginPath();
+                    ctx.arc(particleX, particleY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+            
+            // 플레이어 데미지 텍스트 (몬스터 공격)
+            if (monsterAttackAnimation.active && monsterAttackAnimation.frame >= 10) {
+                const damageY = playerY + 80 - (monsterAttackAnimation.frame - 10) * 0.8; // 더 천천히 올라감
+                const damageOpacity = Math.max(0, 1 - (monsterAttackAnimation.frame - 10) / 110); // 110프레임에 걸쳐 천천히 사라짐
+                
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.globalAlpha = damageOpacity;
+                
+                // 데미지 20 표시 (빨간색, 큰 글씨)
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 6;
+                ctx.font = 'bold 72px Arial'; // 48px -> 72px로 증가
+                ctx.strokeText('20', playerX + 96, damageY);
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.fillText('20', playerX + 96, damageY);
+                
+                ctx.globalAlpha = 1;
+                ctx.textAlign = 'left';
+            }
+            
+            // 몬스터 데미지 텍스트 (타격 이후 표시)
+            if (attackAnimation.active && attackAnimation.frame >= 10) {
+                const damageY = monsterY + 150 - (attackAnimation.frame - 10) * 1; // 위로 아주 천천히 올라가는 애니메이션
+                const damageOpacity = Math.max(0, 1 - (attackAnimation.frame - 10) / 110); // 110프레임에 걸쳐 아주 천천히 사라짐
+                
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.globalAlpha = damageOpacity;
+                
+                if (attackAnimation.isCritical) {
+                    // 크리티컬 데미지 (빨간색, 큰 글씨, 굵게)
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 6;
+                    ctx.font = 'bold 80px Arial';
+                    ctx.strokeText(attackAnimation.damage.toString(), monsterX + 192, damageY);
+                    
+                    ctx.fillStyle = '#ff0000'; // 빨간색
+                    ctx.fillText(attackAnimation.damage.toString(), monsterX + 192, damageY);
+                    
+                    // "CRITICAL!" 텍스트
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 3;
+                    ctx.font = 'bold 36px Arial';
+                    ctx.strokeText('CRITICAL!', monsterX + 192, damageY - 70);
+                    
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fillText('CRITICAL!', monsterX + 192, damageY - 70);
+                } else {
+                    // 일반 데미지 (주황색)
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 5;
+                    ctx.font = 'bold 56px Arial';
+                    ctx.strokeText(attackAnimation.damage.toString(), monsterX + 192, damageY);
+                    
+                    ctx.fillStyle = '#ff8c00'; // 주황색
+                    ctx.fillText(attackAnimation.damage.toString(), monsterX + 192, damageY);
+                }
+                ctx.globalAlpha = 1;
+                ctx.textAlign = 'left';
+            }
+            
+            ctx.restore();
+            
+            // 스테이지 제목
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 24px Courier New';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 10;
+            // 스테이지 번호를 풀은 순서대로 표시 (랜덤 문제라도 1, 2, 3... 순서로)
+            const displayStageNumber = gameState.usedStages.length;
+            const originalTitle = stage.title;
+            const modifiedTitle = originalTitle.replace(/Stage \d+/, `Stage ${displayStageNumber}`);
+            ctx.fillText(modifiedTitle, canvas.width / 2, 50);
+            ctx.shadowBlur = 0;
+        }
+
+        // 애니메이션 루프 (GIF 애니메이션 자동 재생)
+        function animationLoop() {
+            drawScene();
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+
+        // 애니메이션 시작
+        function startAnimation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationLoop();
+        }
+
+        // 애니메이션 중지
+        function stopAnimation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        // 픽셀 캐릭터 그리기 (이미지 파일 또는 픽셀 데이터)
+        function drawPixelCharacter(type, x, y, scale) {
+            let charData = pixelCharacters[type];
+            
+            console.log(`🎯 drawPixelCharacter 호출: type="${type}", charData="${charData}"`);
+            
+            // 이미지 파일 경로인 경우
+            if (typeof charData === 'string') {
+                const img = imageCache[charData];
+                console.log(`🎨 ${type} 렌더링 시도:`, {
+                    파일: charData,
+                    캐시존재: !!img,
+                    로드완료: img?.complete,
+                    이미지크기: img ? `${img.naturalWidth}x${img.naturalHeight}` : 'N/A',
+                    이미지src: img?.src
+                });
+                
+                if (img && img.complete && img.naturalWidth > 0) {
+                    // 이미지 렌더링 (픽셀 아트 스타일 유지)
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.webkitImageSmoothingEnabled = false;
+                    ctx.mozImageSmoothingEnabled = false;
+                    ctx.msImageSmoothingEnabled = false;
+                    
+                    const size = 64 * scale; // 64x64 기준으로 스케일 적용
+                    ctx.drawImage(img, x, y, size, size);
+                    console.log(`✅ ${type} 이미지 렌더링 완료: ${charData} (크기: ${size}x${size})`);
+                    return;
+                } else {
+                    console.error(`❌ ${type} 이미지 렌더링 불가:`, {
+                        img존재: !!img,
+                        complete: img?.complete,
+                        naturalWidth: img?.naturalWidth,
+                        src: img?.src
+                    });
+                    // 이미지 로드 실패 시 대체 텍스트
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '16px Courier New';
+                    ctx.fillText(`${type}`, x, y);
+                    ctx.fillText(`(${charData})`, x, y + 20);
+                    return;
+                }
+            }
+            
+            // 픽셀 데이터 배열인 경우 (기존 방식)
+            if (Array.isArray(charData)) {
+                const pixelSize = 1 * scale;
+                
+                charData.forEach((row, rowIndex) => {
+                    for (let colIndex = 0; colIndex < row.length; colIndex++) {
+                        const pixel = row[colIndex];
+                        if (pixel !== ' ') {
+                            ctx.fillStyle = colorMap[pixel];
+                            ctx.fillRect(
+                                x + colIndex * pixelSize,
+                                y + rowIndex * pixelSize,
+                                pixelSize,
+                                pixelSize
+                            );
+                        }
+                    }
+                });
+            } else {
+                console.error(`❌ ${type}의 charData 형식이 잘못됨:`, typeof charData);
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-text';
+            messageDiv.style.color = type === 'success' ? '#48bb78' : '#f56565';
+            messageDiv.style.fontWeight = 'bold';
+            messageDiv.innerHTML = text;
+            messageBox.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+            
+            // 로그에도 추가
+            addLog(text.replace(/<[^>]*>/g, ''), type === 'success' ? 'success' : 'error');
+        }
+
+        // 게임 로그 추가 함수
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('gameLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'system' ? '🔔' : type === 'code' ? '🐍' : 'ℹ️';
+            
+            logEntry.innerHTML = `<span style="color: #a0aec0;">[${timestamp}]</span> ${icon} ${message}`;
+            logContainer.appendChild(logEntry);
+            
+            // 자동 스크롤
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 로그가 100개 이상이면 오래된 것 삭제
+            const logs = logContainer.querySelectorAll('.log-entry');
+            if (logs.length > 100) {
+                logs[1].remove(); // 첫 번째는 시스템 로그이므로 두 번째부터 삭제
+            }
+        }
+
+        // 코드 실행 로그 추가 (파이썬 코드 스타일)
+        function addCodeLog(code) {
+            const logContainer = document.getElementById('gameLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry log-code';
+            logEntry.style.fontFamily = "'Courier New', monospace";
+            logEntry.style.backgroundColor = '#1a202c';
+            logEntry.style.borderLeft = '3px solid #48bb78';
+            
+            const timestamp = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            logEntry.innerHTML = `<span style="color: #a0aec0;">[${timestamp}]</span> 🐍 <span style="color: #68d391;">${code}</span>`;
+            logContainer.appendChild(logEntry);
+            
+            // 자동 스크롤
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 로그가 100개 이상이면 오래된 것 삭제
+            const logs = logContainer.querySelectorAll('.log-entry');
+            if (logs.length > 100) {
+                logs[1].remove();
+            }
+        }
+
+        // 파티클 효과
+        function createParticles(x, y, symbol, count) {
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = symbol;
+                particle.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
+                particle.style.top = (y + (Math.random() - 0.5) * 100) + 'px';
+                particle.style.fontSize = (20 + Math.random() * 20) + 'px';
+                document.getElementById('gameContainer').appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 2000);
+            }
+        }
+
+        // 레벨업 효과
+        function showLevelUpEffect() {
+            const effect = document.createElement('div');
+            effect.className = 'level-up-effect';
+            effect.textContent = `⭐ LEVEL UP! ⭐`;
+            document.getElementById('gameContainer').appendChild(effect);
+            
+            setTimeout(() => effect.remove(), 2000);
+        }
+
+        // 업적 표시
+        function showAchievement(text) {
+            const achievement = document.createElement('div');
+            achievement.className = 'achievement-popup';
+            achievement.textContent = text;
+            document.getElementById('gameContainer').appendChild(achievement);
+            
+            setTimeout(() => achievement.remove(), 3000);
+        }
+
+        // 진행도 표시기 생성
+        function createProgressIndicator() {
+            const indicator = document.getElementById('progressIndicator');
+            indicator.innerHTML = '<br>🎯 진행도: ';
+            
+            for (let i = 0; i < stages.length; i++) {
+                const dot = document.createElement('span');
+                dot.className = 'stage-indicator';
+                dot.id = `stage-dot-${i}`;
+                indicator.appendChild(dot);
+            }
+            
+            updateProgressIndicator();
+        }
+
+        // 진행도 업데이트
+        function updateProgressIndicator() {
+            const solvedCount = gameState.usedStages.length - 1; // 현재 푸는 문제 제외
+            for (let i = 0; i < stages.length; i++) {
+                const dot = document.getElementById(`stage-dot-${i}`);
+                if (dot) { // null 체크
+                    if (i < solvedCount) {
+                        dot.className = 'stage-indicator completed';
+                    } else if (i === solvedCount) {
+                        dot.className = 'stage-indicator current';
+                    } else {
+                        dot.className = 'stage-indicator';
+                    }
+                }
+            }
+        }
+
+        // 게임 오버 화면
+        function showGameOver() {
+            const solvedCount = gameState.usedStages.length - 1; // 현재 실패한 문제 제외
+            
+            stopBackgroundMusic(); // 배경음악 정지
+            playGameOverSound(); // 게임오버 사운드
+            
+            // 게임 오버 코드 로그
+            addCodeLog('# 게임 오버');
+            addCodeLog(`if player_hp <= 0:`);
+            addCodeLog(`    game_over = True`);
+            addCodeLog(`    solved_count = ${solvedCount}`);
+            addCodeLog(`    final_level = ${gameState.level}`);
+            addCodeLog(`    final_gold = ${gameState.gold}`);
+            addCodeLog(`    correct_answers = ${gameState.correctAnswers}`);
+            
+            document.getElementById('messageText').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 36px; color: #ef4444; margin-bottom: 20px;">
+                        💀 게임 오버 💀
+                    </div>
+                    <div style="font-size: 20px; margin-bottom: 15px;">
+                        <strong>체력이 모두 소진되었습니다!</strong>
+                    </div>
+                    <div style="font-size: 16px; line-height: 2;">
+                        도전 레벨: <span style="color: #fbbf24;">Lv.${gameState.level}</span><br>
+                        획득 골드: <span style="color: #fbbf24;">${gameState.gold}G</span><br>
+                        해결한 문제: <span style="color: #fbbf24;">${solvedCount}/${stages.length}</span><br>
+                        정답 수: <span style="color: #fbbf24;">${gameState.correctAnswers}</span>
+                    </div>
+                    <br>
+                    <div style="background: rgba(239, 68, 68, 0.2); padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 30px;">
+                        <strong>💪 포기하지 마세요!</strong><br>
+                        다시 도전하여 조건문을 마스터하세요!
+                    </div>
+                    <button id="restartBtn" class="choice-btn"
+                        style="display: inline-block; 
+                               margin: 0 auto; 
+                               font-size: 18px; 
+                               max-width: 300px;
+                               padding: 15px 30px;
+                               text-align: center;
+                               cursor: pointer;">
+                        🔄 다시 도전하기
+                    </button>
+                </div>
+            `;
+            
+            // 버튼 클릭 시 페이지 새로고침
+            setTimeout(() => {
+                const restartBtn = document.getElementById('restartBtn');
+                if (restartBtn) {
+                    restartBtn.addEventListener('click', () => {
+                        console.log('🔄 페이지 새로고침으로 게임 재시작...');
+                        location.reload();
+                    });
+                }
+            }, 100);
+            
+            // 선택지 영역 숨기기
+            const choiceContainer = document.getElementById('choices');
+            choiceContainer.style.display = 'none';
+        }
+
+        // 게임 재시작 (튜토리얼 건너뛰고 바로 시작)
+        async function restartGame() {
+            console.log('🔄 게임 재시작 시작...');
+            
+            // 게임 상태 초기화
+            gameState.hp = 100;
+            gameState.maxHp = 100;
+            gameState.level = 1;
+            gameState.exp = 0;
+            gameState.maxExp = 100;
+            gameState.gold = 0;
+            gameState.currentStage = 0;
+            gameState.score = 0;
+            gameState.correctAnswers = 0;
+            gameState.usedStages = [];
+            gameState.weapon = 0;
+            
+            // 애니메이션 상태 초기화
+            attackAnimation.active = false;
+            attackAnimation.frame = 0;
+            attackAnimation.shake = 0;
+            monsterAttackAnimation.active = false;
+            monsterAttackAnimation.frame = 0;
+            monsterAttackAnimation.shake = 0;
+            
+            // 캐릭터 위치 초기화
+            playerX = 250;
+            monsterX = 950;
+            playerY = 230;
+            monsterY = 40;
+            
+            // 메시지 박스 초기화
+            const messageBox = document.getElementById('messageBox');
+            messageBox.classList.remove('show');
+            
+            // 선택지 영역 다시 표시
+            const choiceContainer = document.getElementById('choices');
+            choiceContainer.style.display = 'block';
+            choiceContainer.innerHTML = ''; // 내용 비우기
+            
+            // 게임 로그 초기화
+            const logContainer = document.getElementById('gameLog');
+            logContainer.innerHTML = '<div class="log-entry log-system"><span style="color: #a0aec0;">[System]</span> 🔔 게임 로그 시작</div>';
+            
+            // 코드 로그 초기화
+            const codeLogContainer = document.getElementById('codeLog');
+            if (codeLogContainer) {
+                codeLogContainer.innerHTML = '<div style="color: #888; padding: 10px;">📝 Python 코드가 여기에 표시됩니다...</div>';
+            }
+            
+            console.log('✅ 게임 상태 초기화 완료');
+            
+            // 튜토리얼 오버레이 숨기기
+            const overlay = document.getElementById('tutorialOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            
+            // 첫 문제도 랜덤으로 선택
+            const firstStageIndex = Math.floor(Math.random() * stages.length);
+            gameState.usedStages.push(firstStageIndex);
+            gameState.currentStage = firstStageIndex;
+            
+            addLog('🎮 조건문 마스터 RPG 재시작!', 'system');
+            addLog(`📚 총 ${stages.length}개의 문제가 준비되었습니다.`, 'info');
+            addLog('⚔️ 첫 번째 도전을 시작합니다!', 'info');
+            
+            // 초기 변수 설정 코드 로그
+            addCodeLog('# 게임 초기화');
+            addCodeLog(`player_hp = ${gameState.hp}`);
+            addCodeLog(`player_max_hp = ${gameState.maxHp}`);
+            addCodeLog(`player_level = ${gameState.level}`);
+            addCodeLog(`player_exp = ${gameState.exp}`);
+            addCodeLog(`player_gold = ${gameState.gold}`);
+            addCodeLog(`current_stage = ${firstStageIndex + 1}`);
+            
+            // 무기 상점 재생성
+            createWeaponShop();
+            
+            // 진행도 인디케이터 재생성
+            const indicator = document.getElementById('progressIndicator');
+            indicator.innerHTML = '<br>🎯 진행도: ';
+            for (let i = 0; i < stages.length; i++) {
+                const dot = document.createElement('span');
+                dot.className = 'stage-indicator';
+                dot.id = `stage-dot-${i}`;
+                indicator.appendChild(dot);
+            }
+            updateProgressIndicator();
+            
+            // 스테이지 로드
+            loadStage(firstStageIndex);
+            
+            // 배경음악 재시작
+            if (!isMuted) {
+                playBackgroundMusic();
+            }
+            
+            console.log('✅ 게임 재시작 완료!');
+        }
+
+        // 승리 화면
+        function showVictoryScreen() {
+            const accuracy = Math.round((gameState.correctAnswers / stages.length) * 100);
+            let rank = 'C';
+            if (accuracy === 100) rank = 'S';
+            else if (accuracy >= 85) rank = 'A';
+            else if (accuracy >= 70) rank = 'B';
+            
+            // 최종 결과 코드 로그
+            addCodeLog('# 게임 클리어!');
+            addCodeLog(`total_stages = ${stages.length}`);
+            addCodeLog(`correct_answers = ${gameState.correctAnswers}`);
+            addCodeLog(`accuracy = (correct_answers / total_stages) * 100  # ${accuracy}%`);
+            addCodeLog(`if accuracy == 100:`);
+            addCodeLog(`    rank = 'S'`);
+            addCodeLog(`elif accuracy >= 85:`);
+            addCodeLog(`    rank = 'A'`);
+            addCodeLog(`elif accuracy >= 70:`);
+            addCodeLog(`    rank = 'B'`);
+            addCodeLog(`else:`);
+            addCodeLog(`    rank = 'C'`);
+            addCodeLog(`final_rank = "${rank}"`);
+            
+            document.getElementById('messageText').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 36px; color: #ffd700; margin-bottom: 20px;">
+                        🏆 축하합니다! 🏆
+                    </div>
+                    <div style="font-size: 20px; margin-bottom: 15px;">
+                        <strong>조건문 마스터 달성!</strong>
+                    </div>
+                    <div style="font-size: 16px; line-height: 2;">
+                        최종 레벨: <span style="color: #fbbf24;">Lv.${gameState.level}</span><br>
+                        획득 골드: <span style="color: #fbbf24;">${gameState.gold}G</span><br>
+                        정답률: <span style="color: #fbbf24;">${accuracy}%</span><br>
+                        최종 등급: <span style="color: #ffd700; font-size: 32px;">${rank}</span>
+                    </div>
+                    <br>
+                    <div style="background: rgba(72, 187, 120, 0.2); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <strong>🎓 학습 완료 내용</strong><br>
+                        ✅ if 기본 문법<br>
+                        ✅ if-else 분기<br>
+                        ✅ if-elif-else 다중 분기<br>
+                        ✅ 비교 연산자 (>, <, ==, !=, >=, <=)<br>
+                        ✅ 논리 연산자 (and, or)<br>
+                        ✅ 조건문 종합 활용
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('choiceContainer').innerHTML = '';
+            document.getElementById('nextBtn').classList.add('hidden');
+            
+            // 최종 씬
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#4a1a4a');
+            gradient.addColorStop(1, '#2a1a4a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 승리 텍스트
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 48px Courier New';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+            ctx.shadowBlur = 20;
+            ctx.fillText('🏆 VICTORY! 🏆', canvas.width / 2, canvas.height / 2);
+            ctx.shadowBlur = 0;
+            
+            // 플레이어 중앙에
+            drawPixelCharacter('player', 680, 200, 4);
+            
+            createParticles(canvas.width / 2, canvas.height / 2, '⭐', 30);
+            showAchievement('🎉 조건문 마스터 달성!');
+        }
+
+        // 초기 스탯 업데이트
+        updateStats();
+
+        // 키보드 이벤트 리스너 추가 (숫자키로 선택지 선택)
+        document.addEventListener('keydown', function(event) {
+            // 1~6번 숫자키 처리
+            if (event.key >= '1' && event.key <= '6') {
+                const index = parseInt(event.key) - 1;
+                const buttons = document.querySelectorAll('.choice-btn');
+                
+                // 선택지가 있고, 해당 인덱스의 버튼이 존재하며, 클릭 가능한 상태인지 확인
+                if (buttons.length > index && buttons[index]) {
+                    const button = buttons[index];
+                    // 버튼이 비활성화되지 않았는지 확인
+                    if (!button.classList.contains('disabled')) {
+                        button.click();
+                    }
+                }
+            }
+        });
+
+        // 게임 시작 버튼 이벤트
+        (function() {
+            const startBtn = document.getElementById('startGameBtn');
+            if (startBtn) {
+                startBtn.onclick = function() {
+                    startGame();
+                };
+            }
+        })();
+    </script>
+</body>
+</html>
